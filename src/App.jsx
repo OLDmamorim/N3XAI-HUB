@@ -97,10 +97,10 @@ function Tag({ label, onClick, active }) {
 function ProjectCard({ p }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="group hover:shadow-lg transition-shadow duration-200 rounded-2xl bg-neutral-700 text-white">
+      <Card className="group transition-shadow duration-200 rounded-2xl bg-neutral-700 text-white border-white/10 hover:shadow-lg">
         <CardHeader className="space-y-2">
-          <div className="flex items-center gap-2 text-white/80">
-            <div className="shrink-0 rounded-xl border p-2">{p.icon ?? <Puzzle className="size-5" />}</div>
+          <div className="flex items-center gap-2 text-white/85">
+            <div className="shrink-0 rounded-xl border border-white/10 p-2">{p.icon ?? <Puzzle className="size-5" />}</div>
             <CardTitle className="text-base sm:text-lg leading-tight flex items-center gap-2">
               {p.title}
               {p.pinned && (
@@ -116,21 +116,21 @@ function ProjectCard({ p }) {
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="text-sm text-white/70">
+        <CardContent className="text-sm text-white/75">
           <p>{p.desc}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {p.tags?.map((t) => (
-              <Badge key={t} variant="outline" className="rounded-full text-[10px]">
+              <Badge key={t} variant="outline" className="rounded-full text-[10px] border-white/20 text-white/85">
                 {t}
               </Badge>
             ))}
-            <Badge className="rounded-full text-[10px] capitalize" variant="secondary">
+            <Badge className="rounded-full text-[10px] capitalize bg-white/10 text-white">
               {p.status}
             </Badge>
           </div>
         </CardContent>
         <CardFooter>
-          <Button asChild size="sm" className="rounded-xl">
+          <Button asChild size="sm" className="rounded-xl bg-white text-neutral-800 hover:opacity-90">
             <a href={p.url} target="_blank" rel="noreferrer">
               Abrir <ExternalLink className="ml-2 size-4" />
             </a>
@@ -142,7 +142,7 @@ function ProjectCard({ p }) {
 }
 
 /* =========================
-   Hero com PARALLAX + fade-in
+   Hero com PARALLAX + overlay suave
 ========================= */
 const easing = [0.22, 1, 0.36, 1];
 const container = {
@@ -164,15 +164,17 @@ function Hero({ onScrollToHub }) {
   const fgY = useTransform(scrollY, [0, 600], [0, -40]);
 
   return (
-    <section className="relative h-[86vh] min-h-[560px] w-full overflow-hidden">
+    <section className="relative h-[86vh] min-h-[560px] w-full overflow-hidden bg-neutral-700">
+      {/* Background (parallax) */}
       <motion.div
         className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center will-change-transform"
         style={reduceMotion ? {} : { y: bgY }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-black/70 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
+      {/* Overlay SUAVE, sem gradiente pesado */}
+      <div className="absolute inset-0 bg-black/50 pointer-events-none" />
 
+      {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
         <div className="flex items-center gap-2 text-white">
           <div className="rounded-full border border-white/40 p-2">
@@ -180,14 +182,12 @@ function Hero({ onScrollToHub }) {
           </div>
           <span className="font-semibold tracking-wide">NEXAI</span>
         </div>
-        <button
-          className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white"
-          aria-label="Abrir menu"
-        >
+        <button className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white" aria-label="Abrir menu">
           <Menu className="size-5" />
         </button>
       </div>
 
+      {/* Headline */}
       <motion.div
         variants={container}
         initial="hidden"
@@ -202,11 +202,9 @@ function Hero({ onScrollToHub }) {
           className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none"
           draggable={false}
         />
-
         <motion.p variants={item} className="mt-3 text-white/90 text-base sm:text-lg">
           Projetos, portais e ferramentas — tudo num só lugar.
         </motion.p>
-
         <motion.button
           variants={item}
           onClick={onScrollToHub}
@@ -264,7 +262,7 @@ export default function NEXAIHub() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-800 text-white">
+    <div className="min-h-screen bg-neutral-700 text-white">
       <Hero
         onScrollToHub={() => {
           const el = document.getElementById("hub");
@@ -272,22 +270,21 @@ export default function NEXAIHub() {
         }}
       />
 
-      <section id="hub" className="mx-auto max-w-7xl p-4 sm:p-6">
-        {/* Header */}
+      <section id="hub" className="mx-auto max-w-7xl p-4 sm:p-6 bg-neutral-700">
+        {/* Header com logo */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <motion.div initial={{ rotate: -6, scale: 0.9 }} animate={{ rotate: 0, scale: 1 }} className="rounded-2xl border p-2">
+            <motion.div initial={{ rotate: -6, scale: 0.9 }} animate={{ rotate: 0, scale: 1 }} className="rounded-2xl border border-white/10 p-2">
               <Puzzle className="size-6" />
             </motion.div>
             <div>
-              {/* aqui substituí o título por logo */}
               <img
                 src="/n3xai-logo.png"
                 alt="NEXAI Logo"
                 className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none"
                 draggable={false}
               />
-              <p className="text-sm text-white/70">O ponto único para todos os teus portais e ferramentas.</p>
+              <p className="text-sm text-white/75">O ponto único para todos os teus portais e ferramentas.</p>
             </div>
           </div>
 
@@ -301,11 +298,11 @@ export default function NEXAIHub() {
           </div>
         </div>
 
-        <Separator className="my-4 bg-white/20" />
+        <Separator className="my-4 border-white/10" />
 
         {/* Search & Filters */}
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-          <div className="flex items-center gap-2 rounded-2xl border px-3 py-2 bg-neutral-700">
+          <div className="flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 bg-neutral-700">
             <Search className="size-4" />
             <Input
               id="search"
@@ -316,7 +313,7 @@ export default function NEXAIHub() {
             />
           </div>
           <Tabs value={status} onValueChange={setStatus} className="justify-self-start">
-            <TabsList className="grid grid-cols-5 bg-neutral-700">
+            <TabsList className="grid grid-cols-5 bg-neutral-700 border border-white/10 rounded-xl">
               <TabsTrigger value="todos">Todos</TabsTrigger>
               {STATUS_OPTIONS.map((s) => (
                 <TabsTrigger key={s} value={s} className="capitalize">
@@ -326,16 +323,16 @@ export default function NEXAIHub() {
             </TabsList>
           </Tabs>
           <div className="justify-self-end">
-            <Button variant="ghost" size="sm" className="rounded-xl" onClick={clearFilters}>
+            <Button variant="ghost" size="sm" className="rounded-xl">
               <Filter className="mr-2 size-4" />
               Limpar filtros
             </Button>
           </div>
         </div>
 
-        {/* Tags cloud */}
+        {/* Tags */}
         <div className="mt-3 flex flex-wrap gap-2">
-          <Badge variant="outline" className="rounded-full text-[10px] flex items-center gap-1">
+          <Badge variant="outline" className="rounded-full text-[10px] flex items-center gap-1 border-white/20 text-white/85">
             <Tags className="size-3" />
             Tags
           </Badge>
@@ -350,7 +347,7 @@ export default function NEXAIHub() {
             <ProjectCard key={p.id} p={p} />
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full text-center text-white/70 py-16">
+            <div className="col-span-full text-center text-white/75 py-16">
               <Search className="mx-auto mb-3 size-6" />
               <p>Nada encontrado com esses filtros.</p>
             </div>
