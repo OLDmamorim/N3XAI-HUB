@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -15,8 +14,6 @@ import {
   Search,
   Star,
   ExternalLink,
-  Plus,
-  X,
   Filter,
   Rocket,
   Settings,
@@ -167,23 +164,19 @@ function Hero({ onScrollToHub }) {
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Parallax leve: ajusta os valores para +/– efeito
   const bgY = useTransform(scrollY, [0, 600], [0, -120]);
   const fgY = useTransform(scrollY, [0, 600], [0, -40]);
 
   return (
     <section className="relative h-[86vh] min-h-[560px] w-full overflow-hidden">
-      {/* Background com parallax */}
       <motion.div
         className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center will-change-transform"
         style={reduceMotion ? {} : { y: bgY }}
         aria-hidden="true"
       />
-      {/* Overlays escuros */}
       <div className="absolute inset-0 bg-black/70 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
 
-      {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
         <div className="flex items-center gap-2 text-white">
           <div className="rounded-full border border-white/40 p-2">
@@ -199,7 +192,6 @@ function Hero({ onScrollToHub }) {
         </button>
       </div>
 
-      {/* Headline (mais abaixo) */}
       <motion.div
         variants={container}
         initial="hidden"
@@ -242,7 +234,6 @@ export default function NEXAIHub() {
   const [projects, setProjects] = useState(initialProjects);
   const { dark, setDark } = useSystemTheme();
 
-  // Atalho: "/" foca a pesquisa
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "/") {
@@ -305,20 +296,6 @@ export default function NEXAIHub() {
                 Tema escuro
               </Label>
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="rounded-xl" variant="default">
-                  <Plus className="mr-2 size-4" />
-                  Novo
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[520px]">
-                <DialogHeader>
-                  <DialogTitle>Novo projeto</DialogTitle>
-                </DialogHeader>
-                {/* conteúdo do diálogo pode ser adicionado aqui quando precisares */}
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
 
