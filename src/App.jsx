@@ -64,7 +64,9 @@ function Tag({ label, onClick, active }) {
     <Badge
       onClick={onClick}
       variant={active ? "default" : "secondary"}
-      className={\`cursor-pointer select-none rounded-full px-3 py-1 text-xs \${active ? "shadow" : "opacity-90 hover:opacity-100"}\`}
+      className={`cursor-pointer select-none rounded-full px-3 py-1 text-xs ${
+        active ? "shadow" : "opacity-90 hover:opacity-100"
+      }`}
     >
       {label}
     </Badge>
