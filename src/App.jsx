@@ -134,17 +134,31 @@ function Hero({ onScrollToHub }) {
           </div>
           <span className="font-semibold tracking-wide">NEXAI</span>
         </div>
-        <button className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white" aria-label="Abrir menu">
+        <button
+          className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white"
+          aria-label="Abrir menu"
+        >
           <Menu className="size-5" />
         </button>
       </div>
 
       {/* Headline */}
       <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-center px-5 sm:px-8">
-        <h1 className="text-4xl leading-tight font-extrabold text-white drop-shadow-md sm:text-5xl md:text-6xl">NEXAI Hub</h1>
-        <p className="mt-2 text-white/90 text-base sm:text-lg">Projetos, portais e ferramentas — tudo num só lugar.</p>
+        {/* LOGO em vez do texto */}
+        <img
+          src="/n3xai-logo.png"
+          alt="NEXAI Logo"
+          className="h-16 sm:h-20 md:h-24 drop-shadow-md"
+        />
 
-        <button onClick={onScrollToHub} className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white">
+        <p className="mt-2 text-white/90 text-base sm:text-lg">
+          Projetos, portais e ferramentas — tudo num só lugar.
+        </p>
+
+        <button
+          onClick={onScrollToHub}
+          className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
+        >
           Entrar
           <ChevronDown className="size-4" />
         </button>
