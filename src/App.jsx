@@ -97,10 +97,12 @@ function Tag({ label, onClick, active }) {
 function ProjectCard({ p }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="group transition-shadow duration-200 rounded-2xl bg-neutral-700 text-white border-white/10 hover:shadow-lg">
+      <Card className="group transition-shadow duration-200 rounded-2xl bg-white/5 text-white border border-white/10 hover:shadow-lg">
         <CardHeader className="space-y-2">
           <div className="flex items-center gap-2 text-white/85">
-            <div className="shrink-0 rounded-xl border border-white/10 p-2">{p.icon ?? <Puzzle className="size-5" />}</div>
+            <div className="shrink-0 rounded-xl border border-white/10 p-2">
+              {p.icon ?? <Puzzle className="size-5" />}
+            </div>
             <CardTitle className="text-base sm:text-lg leading-tight flex items-center gap-2">
               {p.title}
               {p.pinned && (
@@ -124,9 +126,7 @@ function ProjectCard({ p }) {
                 {t}
               </Badge>
             ))}
-            <Badge className="rounded-full text-[10px] capitalize bg-white/10 text-white">
-              {p.status}
-            </Badge>
+            <Badge className="rounded-full text-[10px] capitalize bg-white/10 text-white">{p.status}</Badge>
           </div>
         </CardContent>
         <CardFooter>
@@ -142,7 +142,7 @@ function ProjectCard({ p }) {
 }
 
 /* =========================
-   Hero com PARALLAX + overlay suave
+   Hero com PARALLAX + blend
 ========================= */
 const easing = [0.22, 1, 0.36, 1];
 const container = {
@@ -171,8 +171,8 @@ function Hero({ onScrollToHub }) {
         style={reduceMotion ? {} : { y: bgY }}
         aria-hidden="true"
       />
-      {/* Overlay SUAVE, sem gradiente pesado */}
-      <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+      {/* Overlay SUAVE */}
+      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
@@ -182,12 +182,15 @@ function Hero({ onScrollToHub }) {
           </div>
           <span className="font-semibold tracking-wide">NEXAI</span>
         </div>
-        <button className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white" aria-label="Abrir menu">
+        <button
+          className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white"
+          aria-label="Abrir menu"
+        >
           <Menu className="size-5" />
         </button>
       </div>
 
-      {/* Headline */}
+      {/* Conteúdo */}
       <motion.div
         variants={container}
         initial="hidden"
@@ -214,6 +217,9 @@ function Hero({ onScrollToHub }) {
           <ChevronDown className="size-4" />
         </motion.button>
       </motion.div>
+
+      {/* BLEND para o fundo base */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-neutral-700" />
     </section>
   );
 }
@@ -270,7 +276,7 @@ export default function NEXAIHub() {
         }}
       />
 
-      <section id="hub" className="mx-auto max-w-7xl p-4 sm:p-6 bg-neutral-700">
+      <section id="hub" className="relative mx-auto max-w-7xl p-4 sm:p-6">
         {/* Header com logo */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -278,12 +284,7 @@ export default function NEXAIHub() {
               <Puzzle className="size-6" />
             </motion.div>
             <div>
-              <img
-                src="/n3xai-logo.png"
-                alt="NEXAI Logo"
-                className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none"
-                draggable={false}
-              />
+              <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none" draggable={false} />
               <p className="text-sm text-white/75">O ponto único para todos os teus portais e ferramentas.</p>
             </div>
           </div>
@@ -291,9 +292,7 @@ export default function NEXAIHub() {
           <div className="flex items-center gap-3">
             <div className="flex items-center space-x-2">
               <Switch id="theme" checked={dark} onCheckedChange={setDark} />
-              <Label htmlFor="theme" className="text-sm">
-                Tema escuro
-              </Label>
+              <Label htmlFor="theme" className="text-sm">Tema escuro</Label>
             </div>
           </div>
         </div>
@@ -302,30 +301,27 @@ export default function NEXAIHub() {
 
         {/* Search & Filters */}
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-          <div className="flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 bg-neutral-700">
+          <div className="flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 bg-white/5">
             <Search className="size-4" />
             <Input
               id="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Pesquisar por título, descrição ou tag… (atalho: /)"
-              className="border-0 focus-visible:ring-0 bg-transparent text-white placeholder:text-white/50"
+              className="border-0 focus-visible:ring-0 bg-transparent text-white placeholder:text-white/60"
             />
           </div>
           <Tabs value={status} onValueChange={setStatus} className="justify-self-start">
-            <TabsList className="grid grid-cols-5 bg-neutral-700 border border-white/10 rounded-xl">
+            <TabsList className="grid grid-cols-5 bg-white/5 border border-white/10 rounded-xl">
               <TabsTrigger value="todos">Todos</TabsTrigger>
               {STATUS_OPTIONS.map((s) => (
-                <TabsTrigger key={s} value={s} className="capitalize">
-                  {s}
-                </TabsTrigger>
+                <TabsTrigger key={s} value={s} className="capitalize">{s}</TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
           <div className="justify-self-end">
-            <Button variant="ghost" size="sm" className="rounded-xl">
-              <Filter className="mr-2 size-4" />
-              Limpar filtros
+            <Button variant="ghost" size="sm" className="rounded-xl" onClick={clearFilters}>
+              <Filter className="mr-2 size-4" />Limpar filtros
             </Button>
           </div>
         </div>
@@ -333,8 +329,7 @@ export default function NEXAIHub() {
         {/* Tags */}
         <div className="mt-3 flex flex-wrap gap-2">
           <Badge variant="outline" className="rounded-full text-[10px] flex items-center gap-1 border-white/20 text-white/85">
-            <Tags className="size-3" />
-            Tags
+            <Tags className="size-3" />Tags
           </Badge>
           {tags.map((t) => (
             <Tag key={t} label={t} active={activeTags.includes(t)} onClick={() => toggleTag(t)} />
