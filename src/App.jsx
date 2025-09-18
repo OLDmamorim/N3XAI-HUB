@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   Puzzle,
   Search,
@@ -26,14 +26,13 @@ import {
   Database,
   Wrench,
   Tags,
+  Menu,
+  ChevronDown,
 } from "lucide-react";
-import { Menu, ChevronDown } from "lucide-react";
 
-/**
- * App principal - NEXAI Hub
- * (versão com overlay escuro e vinheta no Hero)
- */
-
+/* =========================
+   Dados base
+========================= */
 const initialProjects = [
   {
     id: "agendamentos",
@@ -45,13 +44,39 @@ const initialProjects = [
     icon: <CalendarCheck className="size-5" />,
     pinned: true,
   },
+  {
+    id: "ocr",
+    title: "Express OCR",
+    desc: "Leitura de Eurocodes e etiquetas com validação e base de dados.",
+    url: "https://example.com/ocr",
+    tags: ["OCR", "Operações", "BD"],
+    status: "ativo",
+    icon: <ScanLine className="size-5" />,
+    pinned: true,
+  },
+  {
+    id: "rececao-material",
+    title: "Receção de Material",
+    desc: "Registo de entradas, reconciliação e controlo de stock em loja.",
+    url: "https://example.com/rececao",
+    tags: ["Stock", "Operações"],
+    status: "em teste",
+    icon: <FolderKanban className="size-5" />,
+    pinned: false,
+  },
 ];
 
-const TAG_ORDER = ["ExpressGlass", "Operações"];
+const TAG_ORDER = ["ExpressGlass", "Operações", "OCR", "Stock", "Notion", "Automação", "Front-end", "BD", "Admin", "Permissões", "Pessoal", "Prototipagem"];
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
 
+/* =========================
+   Tema escuro
+========================= */
 function useSystemTheme() {
-  const prefersDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const prefersDark =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
   const [dark, setDark] = useState(prefersDark);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -59,6 +84,9 @@ function useSystemTheme() {
   return { dark, setDark };
 }
 
+/* =========================
+   UI auxiliares
+========================= */
 function Tag({ label, onClick, active }) {
   return (
     <Badge
@@ -99,9 +127,13 @@ function ProjectCard({ p }) {
           <p>{p.desc}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {p.tags?.map((t) => (
-              <Badge key={t} variant="outline" className="rounded-full text-[10px]">{t}</Badge>
+              <Badge key={t} variant="outline" className="rounded-full text-[10px]">
+                {t}
+              </Badge>
             ))}
-            <Badge className="rounded-full text-[10px] capitalize" variant="secondary">{p.status}</Badge>
+            <Badge className="rounded-full text-[10px] capitalize" variant="secondary">
+              {p.status}
+            </Badge>
           </div>
         </CardContent>
         <CardFooter>
@@ -116,15 +148,40 @@ function ProjectCard({ p }) {
   );
 }
 
+/* =========================
+   Hero com PARALLAX + fade-in
+========================= */
+const easing = [0.22, 1, 0.36, 1];
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easing } },
+};
+
 function Hero({ onScrollToHub }) {
+  const { scrollY } = useScroll();
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Parallax leve: ajusta os valores para +/– efeito
+  const bgY = useTransform(scrollY, [0, 600], [0, -120]);
+  const fgY = useTransform(scrollY, [0, 600], [0, -40]);
+
   return (
     <section className="relative h-[86vh] min-h-[560px] w-full overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center" />
-      {/* Overlay escuro */}
-      <div className="absolute inset-0 bg-black/70" />
-      {/* Vinheta extra */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
+      {/* Background com parallax */}
+      <motion.div
+        className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center will-change-transform"
+        style={reduceMotion ? {} : { y: bgY }}
+        aria-hidden="true"
+      />
+      {/* Overlays escuros */}
+      <div className="absolute inset-0 bg-black/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
@@ -142,31 +199,42 @@ function Hero({ onScrollToHub }) {
         </button>
       </div>
 
-      {/* Headline */}
-      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-center px-5 sm:px-8">
-        {/* LOGO em vez do texto */}
-        <img
+      {/* Headline (mais abaixo) */}
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32"
+        style={reduceMotion ? {} : { y: fgY }}
+      >
+        <motion.img
+          variants={item}
           src="/n3xai-logo.png"
           alt="NEXAI Logo"
-          className="h-16 sm:h-20 md:h-24 drop-shadow-md"
+          className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none"
+          draggable={false}
         />
 
-        <p className="mt-2 text-white/90 text-base sm:text-lg">
+        <motion.p variants={item} className="mt-3 text-white/90 text-base sm:text-lg">
           Projetos, portais e ferramentas — tudo num só lugar.
-        </p>
+        </motion.p>
 
-        <button
+        <motion.button
+          variants={item}
           onClick={onScrollToHub}
           className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
         >
           Entrar
           <ChevronDown className="size-4" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </section>
   );
 }
 
+/* =========================
+   App
+========================= */
 export default function NEXAIHub() {
   const [query, setQuery] = useState("");
   const [activeTags, setActiveTags] = useState([]);
@@ -174,20 +242,148 @@ export default function NEXAIHub() {
   const [projects, setProjects] = useState(initialProjects);
   const { dark, setDark } = useSystemTheme();
 
-  const filtered = useMemo(() => projects, [projects]);
+  // Atalho: "/" foca a pesquisa
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "/") {
+        e.preventDefault();
+        document.getElementById("search")?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const tags = useMemo(() => {
+    const all = new Set();
+    projects.forEach((p) => p.tags?.forEach((t) => all.add(t)));
+    return Array.from(all).sort((a, b) => TAG_ORDER.indexOf(a) - TAG_ORDER.indexOf(b));
+  }, [projects]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return projects
+      .filter((p) => (status === "todos" ? true : p.status === status))
+      .filter((p) => (activeTags.length ? activeTags.every((t) => p.tags?.includes(t)) : true))
+      .filter((p) => (q ? [p.title, p.desc, ...(p.tags || [])].join(" ").toLowerCase().includes(q) : true))
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.title.localeCompare(b.title));
+  }, [projects, query, activeTags, status]);
+
+  const toggleTag = (t) => setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const clearFilters = () => {
+    setActiveTags([]);
+    setStatus("todos");
+    setQuery("");
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Hero onScrollToHub={() => {
-        const el = document.getElementById('hub');
-        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }} />
+      <Hero
+        onScrollToHub={() => {
+          const el = document.getElementById("hub");
+          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+      />
+
       <section id="hub" className="mx-auto max-w-7xl p-4 sm:p-6">
-        <h2 className="text-xl font-bold mb-4">Projetos</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <motion.div initial={{ rotate: -6, scale: 0.9 }} animate={{ rotate: 0, scale: 1 }} className="rounded-2xl border p-2">
+              <Puzzle className="size-6" />
+            </motion.div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">NEXAI • Hub</h1>
+              <p className="text-sm text-muted-foreground">O ponto único para todos os teus portais e ferramentas.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-2">
+              <Switch id="theme" checked={dark} onCheckedChange={setDark} />
+              <Label htmlFor="theme" className="text-sm">
+                Tema escuro
+              </Label>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="rounded-xl" variant="default">
+                  <Plus className="mr-2 size-4" />
+                  Novo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[520px]">
+                <DialogHeader>
+                  <DialogTitle>Novo projeto</DialogTitle>
+                </DialogHeader>
+                {/* conteúdo do diálogo pode ser adicionado aqui quando precisares */}
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <Separator className="my-4" />
+
+        {/* Search & Filters */}
+        <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
+          <div className="flex items-center gap-2 rounded-2xl border px-3 py-2">
+            <Search className="size-4" />
+            <Input
+              id="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Pesquisar por título, descrição ou tag… (atalho: /)"
+              className="border-0 focus-visible:ring-0"
+            />
+          </div>
+          <Tabs value={status} onValueChange={setStatus} className="justify-self-start">
+            <TabsList className="grid grid-cols-5">
+              <TabsTrigger value="todos">Todos</TabsTrigger>
+              {STATUS_OPTIONS.map((s) => (
+                <TabsTrigger key={s} value={s} className="capitalize">
+                  {s}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <div className="justify-self-end">
+            <Button variant="ghost" size="sm" className="rounded-xl" onClick={clearFilters}>
+              <Filter className="mr-2 size-4" />
+              Limpar filtros
+            </Button>
+          </div>
+        </div>
+
+        {/* Tags cloud */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Badge variant="outline" className="rounded-full text-[10px] flex items-center gap-1">
+            <Tags className="size-3" />
+            Tags
+          </Badge>
+          {tags.map((t) => (
+            <Tag key={t} label={t} active={activeTags.includes(t)} onClick={() => toggleTag(t)} />
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => (
             <ProjectCard key={p.id} p={p} />
           ))}
+          {filtered.length === 0 && (
+            <div className="col-span-full text-center text-muted-foreground py-16">
+              <Search className="mx-auto mb-3 size-6" />
+              <p>Nada encontrado com esses filtros.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-10 text-center text-xs text-muted-foreground">
+          <div className="flex items-center justify-center gap-2">
+            <Puzzle className="size-3" />
+            <span>NEXAI • Hub — o teu ponto único de acesso</span>
+          </div>
         </div>
       </section>
     </div>
