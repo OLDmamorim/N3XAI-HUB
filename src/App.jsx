@@ -15,13 +15,9 @@ import {
   Star,
   ExternalLink,
   Filter,
-  Rocket,
-  Settings,
   FolderKanban,
   CalendarCheck,
   ScanLine,
-  Database,
-  Wrench,
   Tags,
   Menu,
   ChevronDown,
@@ -101,9 +97,9 @@ function Tag({ label, onClick, active }) {
 function ProjectCard({ p }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="group hover:shadow-lg transition-shadow duration-200 rounded-2xl">
+      <Card className="group hover:shadow-lg transition-shadow duration-200 rounded-2xl bg-neutral-700 text-white">
         <CardHeader className="space-y-2">
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-white/80">
             <div className="shrink-0 rounded-xl border p-2">{p.icon ?? <Puzzle className="size-5" />}</div>
             <CardTitle className="text-base sm:text-lg leading-tight flex items-center gap-2">
               {p.title}
@@ -120,7 +116,7 @@ function ProjectCard({ p }) {
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="text-sm text-white/70">
           <p>{p.desc}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {p.tags?.map((t) => (
@@ -268,7 +264,7 @@ export default function NEXAIHub() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-neutral-800 text-white">
       <Hero
         onScrollToHub={() => {
           const el = document.getElementById("hub");
@@ -284,8 +280,14 @@ export default function NEXAIHub() {
               <Puzzle className="size-6" />
             </motion.div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">NEXAI • Hub</h1>
-              <p className="text-sm text-muted-foreground">O ponto único para todos os teus portais e ferramentas.</p>
+              {/* aqui substituí o título por logo */}
+              <img
+                src="/n3xai-logo.png"
+                alt="NEXAI Logo"
+                className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none"
+                draggable={false}
+              />
+              <p className="text-sm text-white/70">O ponto único para todos os teus portais e ferramentas.</p>
             </div>
           </div>
 
@@ -299,22 +301,22 @@ export default function NEXAIHub() {
           </div>
         </div>
 
-        <Separator className="my-4" />
+        <Separator className="my-4 bg-white/20" />
 
         {/* Search & Filters */}
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-          <div className="flex items-center gap-2 rounded-2xl border px-3 py-2">
+          <div className="flex items-center gap-2 rounded-2xl border px-3 py-2 bg-neutral-700">
             <Search className="size-4" />
             <Input
               id="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Pesquisar por título, descrição ou tag… (atalho: /)"
-              className="border-0 focus-visible:ring-0"
+              className="border-0 focus-visible:ring-0 bg-transparent text-white placeholder:text-white/50"
             />
           </div>
           <Tabs value={status} onValueChange={setStatus} className="justify-self-start">
-            <TabsList className="grid grid-cols-5">
+            <TabsList className="grid grid-cols-5 bg-neutral-700">
               <TabsTrigger value="todos">Todos</TabsTrigger>
               {STATUS_OPTIONS.map((s) => (
                 <TabsTrigger key={s} value={s} className="capitalize">
@@ -348,7 +350,7 @@ export default function NEXAIHub() {
             <ProjectCard key={p.id} p={p} />
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full text-center text-muted-foreground py-16">
+            <div className="col-span-full text-center text-white/70 py-16">
               <Search className="mx-auto mb-3 size-6" />
               <p>Nada encontrado com esses filtros.</p>
             </div>
@@ -356,7 +358,7 @@ export default function NEXAIHub() {
         </div>
 
         {/* Footer */}
-        <div className="mt-10 text-center text-xs text-muted-foreground">
+        <div className="mt-10 text-center text-xs text-white/60">
           <div className="flex items-center justify-center gap-2">
             <Puzzle className="size-3" />
             <span>NEXAI • Hub — o teu ponto único de acesso</span>
