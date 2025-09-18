@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Puzzle,
   Search,
@@ -142,7 +142,7 @@ function ProjectCard({ p }) {
 }
 
 /* =========================
-   Hero com PARALLAX + blend
+   Hero: imagem FIXA (sticky) + blend
 ========================= */
 const easing = [0.22, 1, 0.36, 1];
 const container = {
@@ -155,24 +155,13 @@ const item = {
 };
 
 function Hero({ onScrollToHub }) {
-  const { scrollY } = useScroll();
-  const reduceMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const bgY = useTransform(scrollY, [0, 600], [0, -120]);
-  const fgY = useTransform(scrollY, [0, 600], [0, -40]);
-
   return (
     <section className="relative h-[86vh] min-h-[560px] w-full overflow-hidden bg-neutral-700">
-      {/* Background (parallax) */}
-      <motion.div
-        className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center will-change-transform"
-        style={reduceMotion ? {} : { y: bgY }}
-        aria-hidden="true"
-      />
-      {/* Overlay SUAVE */}
-      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+      {/* LAYER STICKY: a imagem fica “presa” ao ecrã enquanto passas o Hero */}
+      <div className="sticky top-0 -z-10 h-[86vh] relative">
+        <div className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center" />
+        <div className="absolute inset-0 bg-black/45" />
+      </div>
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
@@ -190,13 +179,12 @@ function Hero({ onScrollToHub }) {
         </button>
       </div>
 
-      {/* Conteúdo */}
+      {/* Conteúdo do Hero */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
         className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32"
-        style={reduceMotion ? {} : { y: fgY }}
       >
         <motion.img
           variants={item}
@@ -218,7 +206,7 @@ function Hero({ onScrollToHub }) {
         </motion.button>
       </motion.div>
 
-      {/* BLEND para o fundo base */}
+      {/* BLEND: transição suave imagem -> cinza base */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-neutral-700" />
     </section>
   );
@@ -234,6 +222,7 @@ export default function NEXAIHub() {
   const [projects, setProjects] = useState(initialProjects);
   const { dark, setDark } = useSystemTheme();
 
+  // Atalho: "/" foca a pesquisa
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "/") {
