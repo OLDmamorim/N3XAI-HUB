@@ -142,26 +142,20 @@ function ProjectCard({ p }) {
 }
 
 /* =========================
-   Hero: imagem FIXA (sticky) + blend
+   Hero com imagem fixa (bg-fixed)
 ========================= */
-const easing = [0.22, 1, 0.36, 1];
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
-};
-const item = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easing } },
-};
-
 function Hero({ onScrollToHub }) {
   return (
-    <section className="relative h-[86vh] min-h-[560px] w-full overflow-hidden bg-neutral-700">
-      {/* LAYER STICKY: a imagem fica “presa” ao ecrã enquanto passas o Hero */}
-      <div className="sticky top-0 -z-10 h-[86vh] relative">
-        <div className="absolute inset-0 bg-[url('/face-swap.png')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-black/45" />
-      </div>
+    <section
+      className="
+        relative h-[86vh] min-h-[560px] w-full
+        bg-neutral-700
+        bg-[url('/face-swap.png')] bg-cover bg-center bg-fixed
+        overflow-hidden
+      "
+    >
+      {/* Overlay escuro */}
+      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
@@ -179,34 +173,27 @@ function Hero({ onScrollToHub }) {
         </button>
       </div>
 
-      {/* Conteúdo do Hero */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32"
-      >
-        <motion.img
-          variants={item}
+      {/* Conteúdo */}
+      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32">
+        <img
           src="/n3xai-logo.png"
           alt="NEXAI Logo"
           className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none"
           draggable={false}
         />
-        <motion.p variants={item} className="mt-3 text-white/90 text-base sm:text-lg">
+        <p className="mt-3 text-white/90 text-base sm:text-lg">
           Projetos, portais e ferramentas — tudo num só lugar.
-        </motion.p>
-        <motion.button
-          variants={item}
+        </p>
+        <button
           onClick={onScrollToHub}
           className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
         >
           Entrar
           <ChevronDown className="size-4" />
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
-      {/* BLEND: transição suave imagem -> cinza base */}
+      {/* Blend para fundo cinza base */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-neutral-700" />
     </section>
   );
