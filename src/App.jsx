@@ -182,7 +182,7 @@ function Hero({ onScrollToHub }) {
           draggable={false}
         />
         <p className="mt-3 text-white/90 text-base sm:text-lg">
-          Projetos, portais e ferramentas — tudo num só lugar.
+          The missing piece
         </p>
         <button
           onClick={onScrollToHub}
