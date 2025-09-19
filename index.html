@@ -4,9 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NEXAI • Hub</title>
+    <script type="module" crossorigin src="/assets/index-B1j2j23B.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-TOaXWP_r.css">
+    <style>
+      /* === FUNDO FIXO GERAL === */
+      .site-bg{
+        position:fixed; inset:0; z-index:-1;
+        background-image: var(--hero-img, url('/assets/hero.jpg')); /* <-- ajusta o path aqui */
+        background-size:cover; background-position:center; background-repeat:no-repeat;
+      }
+      /* Garante que nada tapa o fundo por acidente */
+      html, body{ background: transparent; }
+
+      /* === OPÇÃO PARA ESCURECER SÓ A SECÇÃO DOS CARDS ===
+         Usa dentro da secção dos cards um <div class="scrim" aria-hidden="true"></div>
+         (o teu app React já pode incluir isso). Este CSS já trata do efeito. */
+      .cards-section{ position:relative; }
+      .cards-section .scrim{
+        position:sticky; top:0; height:100dvh;
+        pointer-events:none; z-index:-1;
+        background:rgba(0,0,0,.4); /* intensidade do escurecimento */
+      }
+    </style>
   </head>
   <body class="min-h-screen">
+    <!-- FUNDO FIXO: fica sempre por trás -->
+    <div class="site-bg"></div>
+
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
