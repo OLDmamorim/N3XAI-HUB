@@ -5,7 +5,7 @@
 
 :root { --bg: 255 255 255; --fg: 20 23 28; }
 .dark { --bg: 17 17 19; --fg: 240 240 244; }
-html, body { background-color: rgb(var(--bg)); color: rgb(var(--fg)); }
+html, body { background: transparent !important; color: rgb(var(--fg)); }
 
 .hero-vignette::after {
   content: "";
