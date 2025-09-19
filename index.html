@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NEXAI • Hub</title>
-    <script type="module" crossorigin src="/assets/index-B1j2j23B.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-TOaXWP_r.css">
     <style>
       /* === FUNDO FIXO GERAL === */
       .site-bg{
@@ -16,7 +14,7 @@
       /* Garante que nada tapa o fundo por acidente */
       html, body{ background: transparent; }
 
-      /* === OPÇÃO PARA ESCURECER SÓ A SECÇÃO DOS CARDS ===
+      /* === ESCURECER SÓ A SECÇÃO DOS CARDS ===
          Usa dentro da secção dos cards um <div class="scrim" aria-hidden="true"></div>
          (o teu app React já pode incluir isso). Este CSS já trata do efeito. */
       .cards-section{ position:relative; }
@@ -32,5 +30,8 @@
     <div class="site-bg"></div>
 
     <div id="root"></div>
+
+    <!-- ENTRYPOINT do Vite (pré-build). O Vite substitui por /assets/xxx na build. -->
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
