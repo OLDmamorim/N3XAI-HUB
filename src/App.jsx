@@ -52,8 +52,11 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [deletingProject, setDeletingProject] = useState(null);
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   // Formulário de projeto
   const [formData, setFormData] = useState({
@@ -103,8 +106,9 @@ function App() {
       setIsAdmin(true);
       setShowLoginDialog(false);
       setLoginPassword("");
+      setLoginError("");
     } else {
-      alert("Palavra-passe incorreta!");
+      setLoginError("Palavra-passe incorreta!");
     }
   };
 
@@ -140,15 +144,21 @@ function App() {
     setShowProjectDialog(true);
   };
 
-  const handleDeleteProject = (projectId) => {
-    if (confirm("Tem a certeza que deseja eliminar este portal?")) {
-      setProjects(projects.filter(p => p.id !== projectId));
+  const handleDeleteProject = (project) => {
+    setDeletingProject(project);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingProject) {
+      setProjects(projects.filter(p => p.id !== deletingProject.id));
+      setShowDeleteDialog(false);
+      setDeletingProject(null);
     }
   };
 
   const handleSaveProject = () => {
     if (!formData.title || !formData.description || !formData.url) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
@@ -294,7 +304,7 @@ function App() {
                       ✏️
                     </button>
                     <button
-                      onClick={() => handleDeleteProject(project.id)}
+                      onClick={() => handleDeleteProject(project)}
                       className="action-btn delete-btn"
                       title="Eliminar"
                     >
@@ -340,7 +350,10 @@ function App() {
             <div className="modal-header">
               <h3>Login de Administrador</h3>
               <button
-                onClick={() => setShowLoginDialog(false)}
+                onClick={() => {
+                  setShowLoginDialog(false);
+                  setLoginError("");
+                }}
                 className="close-btn"
               >
                 ❌
@@ -357,11 +370,19 @@ function App() {
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                   placeholder="Digite a palavra-passe..."
                 />
+                {loginError && (
+                  <div style={{color: 'red', fontSize: '0.875rem', marginTop: '0.5rem'}}>
+                    {loginError}
+                  </div>
+                )}
               </div>
               
               <div className="modal-actions">
                 <button
-                  onClick={() => setShowLoginDialog(false)}
+                  onClick={() => {
+                    setShowLoginDialog(false);
+                    setLoginError("");
+                  }}
                   className="btn btn-secondary"
                 >
                   Cancelar
@@ -371,6 +392,43 @@ function App() {
                   className="btn btn-primary"
                 >
                   Entrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Confirmar Eliminação</h3>
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                className="close-btn"
+              >
+                ❌
+              </button>
+            </div>
+            
+            <div className="modal-content">
+              <p>Tem a certeza que deseja eliminar o portal "{deletingProject?.title}"?</p>
+              
+              <div className="modal-actions">
+                <button
+                  onClick={() => setShowDeleteDialog(false)}
+                  className="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="btn btn-primary"
+                  style={{backgroundColor: '#ef4444'}}
+                >
+                  Eliminar
                 </button>
               </div>
             </div>
