@@ -12,7 +12,7 @@ const initialProjects = [
     url: "https://example.com/agendamentos",
     tags: ["ExpressGlass", "Operações", "Front-end"],
     status: "ativo",
-    icon: "📅",
+    icon: "calendar",
     pinned: true,
   },
   {
@@ -22,7 +22,7 @@ const initialProjects = [
     url: "https://example.com/ocr",
     tags: ["OCR", "Operações", "BD"],
     status: "ativo",
-    icon: "📊",
+    icon: "scan",
     pinned: true,
   },
   {
@@ -32,14 +32,29 @@ const initialProjects = [
     url: "https://example.com/rececao",
     tags: ["Stock", "Operações"],
     status: "em teste",
-    icon: "📦",
+    icon: "package",
     pinned: false,
   },
 ];
 
 const TAG_ORDER = ["ExpressGlass", "Operações", "OCR", "Stock", "Notion", "Automação", "Front-end", "BD", "Admin", "Permissões", "Pessoal", "Prototipagem"];
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
-const ICON_OPTIONS = ["📅", "📊", "📦", "🧩", "⚙️", "🔧", "💼", "📋"];
+const ICON_OPTIONS = [
+  { value: "calendar", label: "📅 Calendário", symbol: "□" },
+  { value: "scan", label: "📊 Scanner", symbol: "▣" },
+  { value: "package", label: "📦 Pacote", symbol: "▢" },
+  { value: "puzzle", label: "🧩 Puzzle", symbol: "◈" },
+  { value: "settings", label: "⚙️ Configurações", symbol: "⚙" },
+  { value: "tool", label: "🔧 Ferramenta", symbol: "🔧" },
+  { value: "briefcase", label: "💼 Pasta", symbol: "▤" },
+  { value: "clipboard", label: "📋 Clipboard", symbol: "▥" }
+];
+
+// Função para obter símbolo do ícone
+const getIconSymbol = (iconValue) => {
+  const icon = ICON_OPTIONS.find(i => i.value === iconValue);
+  return icon ? icon.symbol : "◈";
+};
 
 /* =========================
    Tema escuro
@@ -82,30 +97,30 @@ function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onEdit(p)}
-            className="p-1 rounded bg-white/10 hover:bg-white/20 text-white/80 hover:text-white"
+            className="p-1 rounded bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm"
             title="Editar"
           >
-            ✏️
+            ✏
           </button>
           <button
             onClick={() => onDelete(p)}
-            className="p-1 rounded bg-white/10 hover:bg-red-500/20 text-white/80 hover:text-red-300"
+            className="p-1 rounded bg-white/10 hover:bg-red-500/20 text-white/80 hover:text-red-300 text-sm"
             title="Eliminar"
           >
-            🗑️
+            ✕
           </button>
         </div>
       )}
 
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2 text-white/85">
-          <div className="shrink-0 rounded-xl border border-white/10 p-2 text-lg">
-            {p.icon ?? "🧩"}
+          <div className="shrink-0 rounded-xl border border-white/10 p-2 text-lg text-white">
+            {getIconSymbol(p.icon)}
           </div>
           <h3 className="text-base sm:text-lg leading-tight flex items-center gap-2 font-semibold">
             {p.title}
             {p.pinned && (
-              <span className="text-yellow-500" title="Fixado">⭐</span>
+              <span className="text-white/60" title="Fixado">★</span>
             )}
           </h3>
         </div>
@@ -129,7 +144,7 @@ function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
         rel="noreferrer"
         className="inline-flex items-center gap-2 rounded-xl bg-white text-neutral-800 hover:opacity-90 px-4 py-2 text-sm font-medium transition-opacity"
       >
-        Abrir 🔗
+        Abrir →
       </a>
     </div>
   );
@@ -155,7 +170,7 @@ function Hero({ onScrollToHub }) {
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
         <div className="flex items-center gap-2 text-white">
           <div className="rounded-full border border-white/40 p-2">
-            🧩
+            ◈
           </div>
           <span className="font-semibold tracking-wide">NEXAI</span>
         </div>
@@ -182,7 +197,7 @@ function Hero({ onScrollToHub }) {
           onClick={onScrollToHub}
           className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
         >
-          Entrar 🔽
+          Entrar ↓
         </button>
       </div>
 
@@ -208,6 +223,7 @@ export default function NEXAIHub() {
   const [deletingProject, setDeletingProject] = useState(null);
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [formError, setFormError] = useState("");
   const { dark, setDark } = useSystemTheme();
 
   // Formulário de projeto
@@ -216,7 +232,7 @@ export default function NEXAIHub() {
     desc: "",
     url: "",
     status: "ativo",
-    icon: "🧩",
+    icon: "puzzle",
     tags: "",
     pinned: false
   });
@@ -279,10 +295,11 @@ export default function NEXAIHub() {
       desc: "",
       url: "",
       status: "ativo",
-      icon: "🧩",
+      icon: "puzzle",
       tags: "",
       pinned: false
     });
+    setFormError("");
     setShowProjectDialog(true);
   };
 
@@ -297,6 +314,7 @@ export default function NEXAIHub() {
       tags: project.tags.join(", "),
       pinned: project.pinned
     });
+    setFormError("");
     setShowProjectDialog(true);
   };
 
@@ -314,14 +332,35 @@ export default function NEXAIHub() {
   };
 
   const handleSaveProject = () => {
-    if (!formData.title || !formData.desc || !formData.url) {
+    // Validação
+    if (!formData.title.trim()) {
+      setFormError("Título é obrigatório");
+      return;
+    }
+    if (!formData.desc.trim()) {
+      setFormError("Descrição é obrigatória");
+      return;
+    }
+    if (!formData.url.trim()) {
+      setFormError("URL é obrigatória");
+      return;
+    }
+
+    // Validar URL
+    try {
+      new URL(formData.url);
+    } catch {
+      setFormError("URL inválida");
       return;
     }
 
     const projectData = {
       ...formData,
+      title: formData.title.trim(),
+      desc: formData.desc.trim(),
+      url: formData.url.trim(),
       tags: formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag),
-      id: editingProject ? editingProject.id : Date.now().toString()
+      id: editingProject ? editingProject.id : `project-${Date.now()}`
     };
 
     if (editingProject) {
@@ -331,6 +370,7 @@ export default function NEXAIHub() {
     }
 
     setShowProjectDialog(false);
+    setFormError("");
   };
 
   return (
@@ -347,7 +387,7 @@ export default function NEXAIHub() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl border border-white/10 p-2">
-              🧩
+              ◈
             </div>
             <div>
               <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none" draggable={false} />
@@ -373,13 +413,13 @@ export default function NEXAIHub() {
                   onClick={handleAddProject}
                   className="rounded-xl bg-white text-neutral-800 hover:opacity-90 px-4 py-2 text-sm font-medium"
                 >
-                  ➕ Adicionar Portal
+                  + Adicionar Portal
                 </button>
                 <button 
                   onClick={handleLogout}
                   className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:text-white"
                 >
-                  🚪
+                  ←
                 </button>
               </div>
             ) : (
@@ -387,7 +427,7 @@ export default function NEXAIHub() {
                 onClick={() => setShowLoginDialog(true)}
                 className="rounded-xl border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
               >
-                👤 Admin Login
+                ⚙ Admin Login
               </button>
             )}
           </div>
@@ -398,7 +438,7 @@ export default function NEXAIHub() {
         {/* Search & Filters */}
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
           <div className="flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 bg-white/5">
-            🔍
+            ⌕
             <input
               id="search"
               value={query}
@@ -430,14 +470,14 @@ export default function NEXAIHub() {
             onClick={clearFilters}
             className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white/80 hover:text-white"
           >
-            🔄 Limpar filtros
+            ↻ Limpar filtros
           </button>
         </div>
 
         {/* Tags */}
         <div className="mt-3 flex flex-wrap gap-2">
           <span className="rounded-full text-[10px] flex items-center gap-1 border border-white/20 text-white/85 px-2 py-1">
-            🏷️ Tags
+            # Tags
           </span>
           {tags.map((t) => (
             <Tag key={t} label={t} active={activeTags.includes(t)} onClick={() => toggleTag(t)} />
@@ -457,7 +497,7 @@ export default function NEXAIHub() {
           ))}
           {filtered.length === 0 && (
             <div className="col-span-full text-center text-white/75 py-16">
-              🔍
+              ⌕
               <p className="mt-3">Nada encontrado com esses filtros.</p>
             </div>
           )}
@@ -466,7 +506,7 @@ export default function NEXAIHub() {
         {/* Footer */}
         <div className="mt-10 text-center text-xs text-white/60">
           <div className="flex items-center justify-center gap-2">
-            🧩
+            ◈
             <span>NEXAI • Hub — o teu ponto único de acesso</span>
           </div>
         </div>
@@ -485,7 +525,7 @@ export default function NEXAIHub() {
                 }}
                 className="text-white/60 hover:text-white"
               >
-                ❌
+                ✕
               </button>
             </div>
             
@@ -537,7 +577,7 @@ export default function NEXAIHub() {
                 onClick={() => setShowDeleteDialog(false)}
                 className="text-white/60 hover:text-white"
               >
-                ❌
+                ✕
               </button>
             </div>
             
@@ -570,12 +610,21 @@ export default function NEXAIHub() {
                 {editingProject ? 'Editar Portal' : 'Adicionar Novo Portal'}
               </h3>
               <button
-                onClick={() => setShowProjectDialog(false)}
+                onClick={() => {
+                  setShowProjectDialog(false);
+                  setFormError("");
+                }}
                 className="text-white/60 hover:text-white"
               >
-                ❌
+                ✕
               </button>
             </div>
+            
+            {formError && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-sm">
+                {formError}
+              </div>
+            )}
             
             <div className="space-y-4">
               <div>
@@ -633,7 +682,9 @@ export default function NEXAIHub() {
                     className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-white/30"
                   >
                     {ICON_OPTIONS.map(icon => (
-                      <option key={icon} value={icon} className="bg-neutral-800">{icon}</option>
+                      <option key={icon.value} value={icon.value} className="bg-neutral-800">
+                        {icon.symbol} {icon.label.replace(/[📅📊📦🧩⚙️🔧💼📋]/g, '')}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -663,7 +714,10 @@ export default function NEXAIHub() {
               
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => setShowProjectDialog(false)}
+                  onClick={() => {
+                    setShowProjectDialog(false);
+                    setFormError("");
+                  }}
                   className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white"
                 >
                   Cancelar
