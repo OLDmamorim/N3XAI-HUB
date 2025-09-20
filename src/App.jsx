@@ -185,9 +185,7 @@ function Hero({ onScrollToHub }) {
       <div className="hero-content">
         <img src="/n3xai-logo.png" alt="NEXAI Logo" className="hero-logo" />
         <p className="hero-subtitle">The missing piece</p>
-        <button onClick={onScrollToHub} className="enter-button">
-          Entrar ↓
-        </button>
+        
       </div>
 
       <div className="hero-gradient" />
