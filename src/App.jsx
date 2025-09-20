@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './App.css';
 
 // Configurações
-const JSONBIN_API_KEY = '$2a$10$8vVXjKQX9yF.Hn8Qz5Qz5uO5Qz5Qz5Qz5Qz5Qz5Qz5Qz5Qz5Q'; // API key pública para demo
-const JSONBIN_BIN_ID = '676e8f5fe41b4d34e4625c8a'; // ID do bin para os portais
 const TAG_ORDER = ["ExpressGlass", "Operações", "OCR", "Stock", "Notion", "Automação", "Front-end", "BD", "Admin", "Permissões", "Pessoal", "Prototipagem"];
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
 const ICON_OPTIONS = [
@@ -17,144 +15,78 @@ const ICON_OPTIONS = [
   { value: "clipboard", label: "Clipboard", symbol: "▥" }
 ];
 
-// Dados iniciais
-const INITIAL_PROJECTS = [
-  {
-    id: 'agendamentos',
-    title: 'ExpressGlass • Agendamentos',
-    desc: 'Portal para marcação e gestão de serviços por loja e serviço móvel.',
-    url: 'https://example.com/agendamentos',
-    tags: ['ExpressGlass', 'Operações', 'Front-end'],
-    status: 'ativo',
-    icon: 'calendar',
-    pinned: true
-  },
-  {
-    id: 'ocr',
-    title: 'Express OCR',
-    desc: 'Leitura de Eurocodes e etiquetas com validação e base de dados.',
-    url: 'https://example.com/ocr',
-    tags: ['OCR', 'Operações', 'BD'],
-    status: 'ativo',
-    icon: 'scan',
-    pinned: true
-  },
-  {
-    id: 'rececao-material',
-    title: 'Receção de Material',
-    desc: 'Registo de entradas, reconciliação e controlo de stock em loja.',
-    url: 'https://example.com/rececao',
-    tags: ['Stock', 'Operações'],
-    status: 'em teste',
-    icon: 'package',
-    pinned: false
-  }
-];
-
 // Função para obter símbolo do ícone
 const getIconSymbol = (iconValue) => {
   const icon = ICON_OPTIONS.find(i => i.value === iconValue);
   return icon ? icon.symbol : "◈";
 };
 
-// API functions usando JSONBin
+// API functions usando Netlify Functions
 const api = {
   async getPortals() {
     try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-        headers: {
-          'X-Master-Key': JSONBIN_API_KEY
-        }
-      });
-      
+      const response = await fetch('/.netlify/functions/list-portals');
       if (!response.ok) {
-        throw new Error('Erro ao carregar dados');
+        throw new Error('Erro ao carregar portais');
       }
-      
       const data = await response.json();
-      return data.record?.portals || INITIAL_PROJECTS;
+      return data.portals || [];
     } catch (error) {
-      console.error('Erro ao carregar portais, usando dados locais:', error);
-      return INITIAL_PROJECTS;
-    }
-  },
-
-  async savePortals(portals) {
-    try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': JSONBIN_API_KEY
-        },
-        body: JSON.stringify({ portals })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Erro ao guardar dados');
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Erro ao guardar portais:', error);
+      console.error('Erro ao carregar portais:', error);
       throw error;
     }
   },
 
-  async createPortal(data, token, currentPortals) {
-    if (token !== 'admin123') throw new Error('Não autorizado');
+  async createPortal(data, token) {
+    const response = await fetch('/.netlify/functions/save-portal', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
     
-    const id = data.id || `portal-${Date.now()}`;
-    const tags = Array.isArray(data.tags) ? data.tags : 
-                 typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao criar portal');
+    }
     
-    const newPortal = {
-      id,
-      title: data.title,
-      desc: data.desc,
-      url: data.url,
-      tags,
-      status: data.status || 'ativo',
-      icon: data.icon || 'puzzle',
-      pinned: Boolean(data.pinned)
-    };
-    
-    const updatedPortals = [...currentPortals, newPortal];
-    await this.savePortals(updatedPortals);
-    
-    return { id, message: 'Portal criado com sucesso' };
+    return await response.json();
   },
 
-  async updatePortal(id, data, token, currentPortals) {
-    if (token !== 'admin123') throw new Error('Não autorizado');
+  async updatePortal(id, data, token) {
+    const response = await fetch('/.netlify/functions/update-portal', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ id, ...data })
+    });
     
-    const tags = Array.isArray(data.tags) ? data.tags : 
-                 typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao atualizar portal');
+    }
     
-    const updatedPortals = currentPortals.map(portal => 
-      portal.id === id ? {
-        ...portal,
-        title: data.title,
-        desc: data.desc,
-        url: data.url,
-        tags,
-        status: data.status || 'ativo',
-        icon: data.icon || 'puzzle',
-        pinned: Boolean(data.pinned)
-      } : portal
-    );
-    
-    await this.savePortals(updatedPortals);
-    return { message: 'Portal atualizado com sucesso' };
+    return await response.json();
   },
 
-  async deletePortal(id, token, currentPortals) {
-    if (token !== 'admin123') throw new Error('Não autorizado');
+  async deletePortal(id, token) {
+    const response = await fetch(`/.netlify/functions/delete-portal/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     
-    const updatedPortals = currentPortals.filter(portal => portal.id !== id);
-    await this.savePortals(updatedPortals);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao eliminar portal');
+    }
     
-    return { message: 'Portal eliminado com sucesso' };
+    return await response.json();
   },
 
   async login(password) {
@@ -308,7 +240,6 @@ function NEXAIHub() {
       setProjects(data);
     } catch (error) {
       console.error('Erro ao carregar portais:', error);
-      setProjects(INITIAL_PROJECTS);
     } finally {
       setLoading(false);
     }
@@ -407,7 +338,7 @@ function NEXAIHub() {
     if (!deletingProject) return;
     
     try {
-      await api.deletePortal(deletingProject.id, adminToken, projects);
+      await api.deletePortal(deletingProject.id, adminToken);
       await loadPortals(); // Recarregar lista
       setShowDeleteDialog(false);
       setDeletingProject(null);
@@ -447,9 +378,9 @@ function NEXAIHub() {
       };
 
       if (editingProject) {
-        await api.updatePortal(editingProject.id, projectData, adminToken, projects);
+        await api.updatePortal(editingProject.id, projectData, adminToken);
       } else {
-        await api.createPortal(projectData, adminToken, projects);
+        await api.createPortal(projectData, adminToken);
       }
 
       await loadPortals(); // Recarregar lista
