@@ -332,29 +332,21 @@ export default function NEXAIHub() {
   };
 
   const handleSaveProject = () => {
-    console.log("🔍 Tentando gravar projeto...");
-    console.log("📝 Dados do formulário:", formData);
-    
-    // Validação MUITO simples
+    // Validação simples
     if (!formData.title) {
-      console.log("❌ Título vazio");
       setFormError("Título é obrigatório");
       return;
     }
     
     if (!formData.desc) {
-      console.log("❌ Descrição vazia");
       setFormError("Descrição é obrigatória");
       return;
     }
     
     if (!formData.url) {
-      console.log("❌ URL vazia");
       setFormError("URL é obrigatória");
       return;
     }
-
-    console.log("✅ Validação passou, criando projeto...");
 
     const projectData = {
       id: editingProject ? editingProject.id : `project-${Date.now()}`,
@@ -367,25 +359,12 @@ export default function NEXAIHub() {
       pinned: formData.pinned
     };
 
-    console.log("📦 Projeto criado:", projectData);
-
     if (editingProject) {
-      console.log("✏️ Editando projeto existente");
-      setProjects(prev => {
-        const updated = prev.map(p => p.id === editingProject.id ? projectData : p);
-        console.log("📋 Lista atualizada:", updated);
-        return updated;
-      });
+      setProjects(prev => prev.map(p => p.id === editingProject.id ? projectData : p));
     } else {
-      console.log("➕ Adicionando novo projeto");
-      setProjects(prev => {
-        const updated = [...prev, projectData];
-        console.log("📋 Lista atualizada:", updated);
-        return updated;
-      });
+      setProjects(prev => [...prev, projectData]);
     }
 
-    console.log("✅ Projeto gravado com sucesso!");
     setShowProjectDialog(false);
     setFormError("");
   };
@@ -500,13 +479,6 @@ export default function NEXAIHub() {
             <Tag key={t} label={t} active={activeTags.includes(t)} onClick={() => toggleTag(t)} />
           ))}
         </div>
-
-        {/* Debug info */}
-        {isAdmin && (
-          <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10 text-xs">
-            <strong>Debug:</strong> Total de projetos: {projects.length} | Filtrados: {filtered.length}
-          </div>
-        )}
 
         {/* Grid */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -656,10 +628,7 @@ export default function NEXAIHub() {
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => {
-                    console.log("📝 Título alterado:", e.target.value);
-                    setFormData({...formData, title: e.target.value});
-                  }}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
                   placeholder="Nome do portal..."
                   className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
                 />
@@ -669,10 +638,7 @@ export default function NEXAIHub() {
                 <label className="block text-sm font-medium mb-2">Descrição *</label>
                 <textarea
                   value={formData.desc}
-                  onChange={(e) => {
-                    console.log("📝 Descrição alterada:", e.target.value);
-                    setFormData({...formData, desc: e.target.value});
-                  }}
+                  onChange={(e) => setFormData({...formData, desc: e.target.value})}
                   rows={3}
                   placeholder="Descrição do portal..."
                   className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
@@ -684,10 +650,7 @@ export default function NEXAIHub() {
                 <input
                   type="text"
                   value={formData.url}
-                  onChange={(e) => {
-                    console.log("📝 URL alterada:", e.target.value);
-                    setFormData({...formData, url: e.target.value});
-                  }}
+                  onChange={(e) => setFormData({...formData, url: e.target.value})}
                   placeholder="https://example.com"
                   className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
                 />
@@ -744,14 +707,6 @@ export default function NEXAIHub() {
                 />
                 <label htmlFor="pinned" className="text-sm">Portal fixado (aparece primeiro)</label>
               </div>
-
-              {/* Debug do formulário */}
-              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs">
-                <strong>Debug Formulário:</strong><br/>
-                Título: "{formData.title}" ({formData.title.length} chars)<br/>
-                Descrição: "{formData.desc}" ({formData.desc.length} chars)<br/>
-                URL: "{formData.url}" ({formData.url.length} chars)
-              </div>
               
               <div className="flex gap-3 pt-4">
                 <button
@@ -764,10 +719,7 @@ export default function NEXAIHub() {
                   Cancelar
                 </button>
                 <button
-                  onClick={() => {
-                    console.log("🖱️ Botão Criar/Guardar clicado");
-                    handleSaveProject();
-                  }}
+                  onClick={handleSaveProject}
                   className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90"
                 >
                   {editingProject ? 'Guardar Alterações' : 'Criar Portal'}
