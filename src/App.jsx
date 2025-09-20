@@ -409,13 +409,7 @@ function NEXAIHub() {
       <section id="hub" className="hub-section">
         {/* Header */}
         <div className="hub-header">
-          <div className="hub-title">
-            <div className="hub-icon">◈</div>
-            <div>
-              <img src="/n3xai-logo.png" alt="NEXAI Logo" className="hub-logo" />
-              <p className="hub-subtitle">O ponto único para todos os teus portais e ferramentas.</p>
-            </div>
-          </div>
+         
 
           <div className="hub-actions">
             {isAdmin ? (
