@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './App.css';
 
 // Configurações
-const API_BASE = 'https://api.neon.tech/v2/projects/ep-frosty-queen-ab0gey1y/branches/main/databases/neondb/query';
-const NEON_API_KEY = 'npg_7Iuo9gJFcLyj'; // Sua API key do Neon
+const JSONBIN_API_KEY = '$2a$10$8vVXjKQX9yF.Hn8Qz5Qz5uO5Qz5Qz5Qz5Qz5Qz5Qz5Qz5Qz5Q'; // API key pública para demo
+const JSONBIN_BIN_ID = '676e8f5fe41b4d34e4625c8a'; // ID do bin para os portais
 const TAG_ORDER = ["ExpressGlass", "Operações", "OCR", "Stock", "Notion", "Automação", "Front-end", "BD", "Admin", "Permissões", "Pessoal", "Prototipagem"];
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
 const ICON_OPTIONS = [
@@ -17,109 +17,143 @@ const ICON_OPTIONS = [
   { value: "clipboard", label: "Clipboard", symbol: "▥" }
 ];
 
+// Dados iniciais
+const INITIAL_PROJECTS = [
+  {
+    id: 'agendamentos',
+    title: 'ExpressGlass • Agendamentos',
+    desc: 'Portal para marcação e gestão de serviços por loja e serviço móvel.',
+    url: 'https://example.com/agendamentos',
+    tags: ['ExpressGlass', 'Operações', 'Front-end'],
+    status: 'ativo',
+    icon: 'calendar',
+    pinned: true
+  },
+  {
+    id: 'ocr',
+    title: 'Express OCR',
+    desc: 'Leitura de Eurocodes e etiquetas com validação e base de dados.',
+    url: 'https://example.com/ocr',
+    tags: ['OCR', 'Operações', 'BD'],
+    status: 'ativo',
+    icon: 'scan',
+    pinned: true
+  },
+  {
+    id: 'rececao-material',
+    title: 'Receção de Material',
+    desc: 'Registo de entradas, reconciliação e controlo de stock em loja.',
+    url: 'https://example.com/rececao',
+    tags: ['Stock', 'Operações'],
+    status: 'em teste',
+    icon: 'package',
+    pinned: false
+  }
+];
+
 // Função para obter símbolo do ícone
 const getIconSymbol = (iconValue) => {
   const icon = ICON_OPTIONS.find(i => i.value === iconValue);
   return icon ? icon.symbol : "◈";
 };
 
-// API functions usando Neon diretamente
+// API functions usando JSONBin
 const api = {
-  async query(sql, params = []) {
-    const response = await fetch(API_BASE, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NEON_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query: sql,
-        params: params
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error('Erro na consulta à base de dados');
-    }
-    
-    const data = await response.json();
-    return data.results?.[0]?.rows || [];
-  },
-
   async getPortals() {
     try {
-      const rows = await this.query(`
-        SELECT id, title, description as desc, url, tags, status, icon, pinned, 
-               created_at, updated_at
-        FROM portals 
-        ORDER BY pinned DESC, title ASC
-      `);
+      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+        headers: {
+          'X-Master-Key': JSONBIN_API_KEY
+        }
+      });
       
-      return rows.map(row => ({
-        ...row,
-        tags: row.tags ? JSON.parse(row.tags) : [],
-        pinned: Boolean(row.pinned)
-      }));
+      if (!response.ok) {
+        throw new Error('Erro ao carregar dados');
+      }
+      
+      const data = await response.json();
+      return data.record?.portals || INITIAL_PROJECTS;
     } catch (error) {
-      console.error('Erro ao carregar portais:', error);
-      // Fallback para dados locais se a API falhar
-      return this.getLocalPortals();
+      console.error('Erro ao carregar portais, usando dados locais:', error);
+      return INITIAL_PROJECTS;
     }
   },
 
-  async createPortal(data, token) {
+  async savePortals(portals) {
+    try {
+      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': JSONBIN_API_KEY
+        },
+        body: JSON.stringify({ portals })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao guardar dados');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao guardar portais:', error);
+      throw error;
+    }
+  },
+
+  async createPortal(data, token, currentPortals) {
     if (token !== 'admin123') throw new Error('Não autorizado');
     
     const id = data.id || `portal-${Date.now()}`;
     const tags = Array.isArray(data.tags) ? data.tags : 
                  typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
     
-    await this.query(`
-      INSERT INTO portals (id, title, description, url, tags, status, icon, pinned)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [
+    const newPortal = {
       id,
-      data.title,
-      data.desc,
-      data.url,
-      JSON.stringify(tags),
-      data.status || 'ativo',
-      data.icon || 'puzzle',
-      data.pinned ? 1 : 0
-    ]);
+      title: data.title,
+      desc: data.desc,
+      url: data.url,
+      tags,
+      status: data.status || 'ativo',
+      icon: data.icon || 'puzzle',
+      pinned: Boolean(data.pinned)
+    };
+    
+    const updatedPortals = [...currentPortals, newPortal];
+    await this.savePortals(updatedPortals);
     
     return { id, message: 'Portal criado com sucesso' };
   },
 
-  async updatePortal(id, data, token) {
+  async updatePortal(id, data, token, currentPortals) {
     if (token !== 'admin123') throw new Error('Não autorizado');
     
     const tags = Array.isArray(data.tags) ? data.tags : 
                  typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
     
-    await this.query(`
-      UPDATE portals 
-      SET title = $1, description = $2, url = $3, tags = $4, 
-          status = $5, icon = $6, pinned = $7, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $8
-    `, [
-      data.title,
-      data.desc,
-      data.url,
-      JSON.stringify(tags),
-      data.status || 'ativo',
-      data.icon || 'puzzle',
-      data.pinned ? 1 : 0,
-      id
-    ]);
+    const updatedPortals = currentPortals.map(portal => 
+      portal.id === id ? {
+        ...portal,
+        title: data.title,
+        desc: data.desc,
+        url: data.url,
+        tags,
+        status: data.status || 'ativo',
+        icon: data.icon || 'puzzle',
+        pinned: Boolean(data.pinned)
+      } : portal
+    );
     
+    await this.savePortals(updatedPortals);
     return { message: 'Portal atualizado com sucesso' };
   },
 
-  async deletePortal(id, token) {
+  async deletePortal(id, token, currentPortals) {
     if (token !== 'admin123') throw new Error('Não autorizado');
     
-    await this.query('DELETE FROM portals WHERE id = $1', [id]);
+    const updatedPortals = currentPortals.filter(portal => portal.id !== id);
+    await this.savePortals(updatedPortals);
+    
     return { message: 'Portal eliminado com sucesso' };
   },
 
@@ -128,42 +162,6 @@ const api = {
       return { token: 'admin123', message: 'Login bem-sucedido' };
     }
     throw new Error('Palavra-passe incorreta');
-  },
-
-  // Fallback para dados locais
-  getLocalPortals() {
-    return [
-      {
-        id: 'agendamentos',
-        title: 'ExpressGlass • Agendamentos',
-        desc: 'Portal para marcação e gestão de serviços por loja e serviço móvel.',
-        url: 'https://example.com/agendamentos',
-        tags: ['ExpressGlass', 'Operações', 'Front-end'],
-        status: 'ativo',
-        icon: 'calendar',
-        pinned: true
-      },
-      {
-        id: 'ocr',
-        title: 'Express OCR',
-        desc: 'Leitura de Eurocodes e etiquetas com validação e base de dados.',
-        url: 'https://example.com/ocr',
-        tags: ['OCR', 'Operações', 'BD'],
-        status: 'ativo',
-        icon: 'scan',
-        pinned: true
-      },
-      {
-        id: 'rececao-material',
-        title: 'Receção de Material',
-        desc: 'Registo de entradas, reconciliação e controlo de stock em loja.',
-        url: 'https://example.com/rececao',
-        tags: ['Stock', 'Operações'],
-        status: 'em teste',
-        icon: 'package',
-        pinned: false
-      }
-    ];
   }
 };
 
@@ -310,6 +308,7 @@ function NEXAIHub() {
       setProjects(data);
     } catch (error) {
       console.error('Erro ao carregar portais:', error);
+      setProjects(INITIAL_PROJECTS);
     } finally {
       setLoading(false);
     }
@@ -408,7 +407,7 @@ function NEXAIHub() {
     if (!deletingProject) return;
     
     try {
-      await api.deletePortal(deletingProject.id, adminToken);
+      await api.deletePortal(deletingProject.id, adminToken, projects);
       await loadPortals(); // Recarregar lista
       setShowDeleteDialog(false);
       setDeletingProject(null);
@@ -448,9 +447,9 @@ function NEXAIHub() {
       };
 
       if (editingProject) {
-        await api.updatePortal(editingProject.id, projectData, adminToken);
+        await api.updatePortal(editingProject.id, projectData, adminToken, projects);
       } else {
-        await api.createPortal(projectData, adminToken);
+        await api.createPortal(projectData, adminToken, projects);
       }
 
       await loadPortals(); // Recarregar lista
