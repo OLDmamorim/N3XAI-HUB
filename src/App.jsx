@@ -1,709 +1,613 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { motion } from "framer-motion";
-import {
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  CalendarCheck, 
+  ScanLine, 
+  FolderKanban, 
   Puzzle,
   Search,
-  Star,
-  ExternalLink,
-  Filter,
-  FolderKanban,
-  CalendarCheck,
-  ScanLine,
-  Tags,
-  Menu,
-  ChevronDown,
   Plus,
-  UserCog,
-  Pencil,
+  Edit,
   Trash2,
-  LogOut,
-  Save,
   X,
-} from "lucide-react";
+  Moon,
+  Sun,
+  LogOut,
+  User
+} from 'lucide-react';
 import './App.css';
 
-/* =========================
-   Dados base
-========================= */
+// Dados iniciais dos portais
 const initialProjects = [
   {
-    id: "agendamentos",
-    title: "ExpressGlass • Agendamentos",
-    desc: "Portal para marcação e gestão de serviços por loja e serviço móvel.",
-    url: "https://example.com/agendamentos",
-    tags: ["ExpressGlass", "Operações", "Front-end"],
-    status: "ativo",
-    icon: "CalendarCheck",
-    pinned: true,
-  },
-  {
-    id: "ocr",
+    id: 1,
     title: "Express OCR",
-    desc: "Leitura de Eurocodes e etiquetas com validação e base de dados.",
+    description: "Leitura de Eurocodes e etiquetas com validação e base de dados.",
     url: "https://example.com/ocr",
-    tags: ["OCR", "Operações", "BD"],
     status: "ativo",
     icon: "ScanLine",
-    pinned: true,
+    tags: ["OCR", "Operações", "BD", "Ativo"],
+    pinned: true
   },
   {
-    id: "rececao-material",
-    title: "Receção de Material",
-    desc: "Registo de entradas, reconciliação e controlo de stock em loja.",
-    url: "https://example.com/rececao",
-    tags: ["Stock", "Operações"],
-    status: "em teste",
-    icon: "FolderKanban",
-    pinned: false,
+    id: 2,
+    title: "ExpressGlass • Agendamentos",
+    description: "Portal para marcação e gestão de serviços por loja e serviço móvel.",
+    url: "https://example.com/agendamentos",
+    status: "ativo",
+    icon: "CalendarCheck",
+    tags: ["ExpressGlass", "Operações", "Front-end", "Ativo"],
+    pinned: true
   },
+  {
+    id: 3,
+    title: "Receção de Material",
+    description: "Registo de entradas, reconciliação e controlo de stock em loja.",
+    url: "https://example.com/recepcao",
+    status: "pausado",
+    icon: "FolderKanban",
+    tags: ["Stock", "Operações", "Em Teste"],
+    pinned: false
+  }
 ];
 
-const TAG_ORDER = ["ExpressGlass", "Operações", "OCR", "Stock", "Notion", "Automação", "Front-end", "BD", "Admin", "Permissões", "Pessoal", "Prototipagem"];
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
+const ICON_OPTIONS = ["CalendarCheck", "ScanLine", "FolderKanban", "Puzzle"];
 
 const ICON_MAP = {
-  CalendarCheck: <CalendarCheck className="size-5" />,
-  ScanLine: <ScanLine className="size-5" />,
-  FolderKanban: <FolderKanban className="size-5" />,
-  Puzzle: <Puzzle className="size-5" />,
+  CalendarCheck: <CalendarCheck className="w-5 h-5" />,
+  ScanLine: <ScanLine className="w-5 h-5" />,
+  FolderKanban: <FolderKanban className="w-5 h-5" />,
+  Puzzle: <Puzzle className="w-5 h-5" />,
 };
 
-/* =========================
-   Tema escuro
-========================= */
-function useSystemTheme() {
-  const prefersDark =
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const [dark, setDark] = useState(prefersDark);
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
-  return { dark, setDark };
-}
+const STATUS_COLORS = {
+  "ativo": "bg-green-500",
+  "em teste": "bg-blue-500", 
+  "em construção": "bg-orange-500",
+  "pausado": "bg-gray-500"
+};
 
-/* =========================
-   Componente de Login
-========================= */
-function LoginDialog({ isOpen, onClose, onLogin }) {
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+function App() {
+  const [projects, setProjects] = useState(initialProjects);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Todos");
+  const [tagFilter, setTagFilter] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [loginPassword, setLoginPassword] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simular verificação de password
-    setTimeout(() => {
-      if (password === "admin123") {
-        onLogin();
-        onClose();
-        setPassword("");
-      } else {
-        alert("Palavra-passe incorreta!");
-      }
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserCog className="size-5" />
-            Acesso de Administrador
-          </DialogTitle>
-          <DialogDescription>
-            Introduza a palavra-passe para aceder à área de administração.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="password">Palavra-passe</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Introduza a palavra-passe..."
-              className="mt-1"
-              required
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "A verificar..." : "Entrar"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/* =========================
-   Componente de Edição/Criação de Portal
-========================= */
-function PortalDialog({ isOpen, onClose, portal, onSave, isEdit = false }) {
+  // Formulário de projeto
   const [formData, setFormData] = useState({
     title: "",
-    desc: "",
+    description: "",
     url: "",
-    tags: [],
     status: "ativo",
     icon: "Puzzle",
-    pinned: false,
+    tags: "",
+    pinned: false
   });
 
   useEffect(() => {
-    if (portal && isEdit) {
-      setFormData({
-        title: portal.title || "",
-        desc: portal.desc || "",
-        url: portal.url || "",
-        tags: portal.tags || [],
-        status: portal.status || "ativo",
-        icon: portal.icon || "Puzzle",
-        pinned: portal.pinned || false,
-      });
-    } else {
-      setFormData({
-        title: "",
-        desc: "",
-        url: "",
-        tags: [],
-        status: "ativo",
-        icon: "Puzzle",
-        pinned: false,
-      });
-    }
-  }, [portal, isEdit, isOpen]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newPortal = {
-      ...formData,
-      id: isEdit ? portal.id : Date.now().toString(),
-    };
-    onSave(newPortal);
-    onClose();
-  };
-
-  const handleTagsChange = (value) => {
-    const tagsArray = value.split(",").map(tag => tag.trim()).filter(tag => tag);
-    setFormData(prev => ({ ...prev, tags: tagsArray }));
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {isEdit ? <Pencil className="size-5" /> : <Plus className="size-5" />}
-            {isEdit ? "Editar Portal" : "Adicionar Novo Portal"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEdit ? "Edite as informações do portal." : "Preencha os dados para criar um novo portal."}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Nome do portal..."
-                className="mt-1"
-                required
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="desc">Descrição *</Label>
-              <Textarea
-                id="desc"
-                value={formData.desc}
-                onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                placeholder="Descrição do portal..."
-                className="mt-1"
-                rows={3}
-                required
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="url">URL *</Label>
-              <Input
-                id="url"
-                type="url"
-                value={formData.url}
-                onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                placeholder="https://example.com"
-                className="mt-1"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="status">Estado</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map(status => (
-                    <SelectItem key={status} value={status} className="capitalize">
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="icon">Ícone</Label>
-              <Select value={formData.icon} onValueChange={(value) => setFormData(prev => ({ ...prev, icon: value }))}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(ICON_MAP).map(iconName => (
-                    <SelectItem key={iconName} value={iconName}>
-                      {iconName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-              <Input
-                id="tags"
-                value={formData.tags.join(", ")}
-                onChange={(e) => handleTagsChange(e.target.value)}
-                placeholder="ExpressGlass, Operações, Front-end"
-                className="mt-1"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="pinned"
-                  checked={formData.pinned}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, pinned: checked }))}
-                />
-                <Label htmlFor="pinned">Portal fixado (aparece primeiro)</Label>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              <Save className="mr-2 size-4" />
-              {isEdit ? "Guardar Alterações" : "Criar Portal"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/* =========================
-   UI auxiliares
-========================= */
-function Tag({ label, onClick, active }) {
-  return (
-    <Badge
-      onClick={onClick}
-      variant={active ? "default" : "secondary"}
-      className={`cursor-pointer select-none rounded-full px-3 py-1 text-xs ${
-        active ? "shadow" : "opacity-90 hover:opacity-100"
-      }`}
-    >
-      {label}
-    </Badge>
-  );
-}
-
-function ProjectCard({ p, isAuthenticated, onEdit, onDelete }) {
-  const icon = ICON_MAP[p.icon] || ICON_MAP.Puzzle;
-
-  return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="group transition-shadow duration-200 rounded-2xl bg-white/5 text-white border border-white/10 hover:shadow-lg">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center gap-2 text-white/85">
-            <div className="shrink-0 rounded-xl border border-white/10 p-2">
-              {icon}
-            </div>
-            <CardTitle className="text-base sm:text-lg leading-tight flex items-center gap-2">
-              {p.title}
-              {p.pinned && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Star className="size-4 fill-current text-yellow-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>Fixado</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="text-sm text-white/75">
-          <p>{p.desc}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {p.tags?.map((t) => (
-              <Badge key={t} variant="outline" className="rounded-full text-[10px] border-white/20 text-white/85">
-                {t}
-              </Badge>
-            ))}
-            <Badge className="rounded-full text-[10px] capitalize bg-white/10 text-white">{p.status}</Badge>
-          </div>
-        </CardContent>
-        <CardFooter className="flex items-center justify-between">
-          <Button asChild size="sm" className="rounded-xl bg-white text-neutral-800 hover:opacity-90">
-            <a href={p.url} target="_blank" rel="noreferrer">
-              Abrir <ExternalLink className="ml-2 size-4" />
-            </a>
-          </Button>
-
-          {isAuthenticated && (
-            <div className="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="size-8 rounded-full text-white/70 hover:text-white hover:bg-white/10" 
-                      onClick={() => onEdit(p)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Editar portal</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="size-8 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10" 
-                      onClick={() => onDelete(p)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Eliminar portal</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
-        </CardFooter>
-      </Card>
-    </motion.div>
-  );
-}
-
-/* =========================
-   Hero com imagem fixa (bg-fixed)
-========================= */
-function Hero({ onScrollToHub }) {
-  return (
-    <section
-      className="
-        relative h-[86vh] min-h-[560px] w-full
-        bg-neutral-700
-        bg-[url('/face-swap.png')] bg-cover bg-center bg-fixed
-        overflow-hidden
-      "
-    >
-      {/* Overlay escuro */}
-      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
-
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
-        <div className="flex items-center gap-2 text-white">
-          <div className="rounded-full border border-white/40 p-2">
-            <Puzzle className="size-5" />
-          </div>
-          <span className="font-semibold tracking-wide">NEXAI</span>
-        </div>
-        <button
-          className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white"
-          aria-label="Abrir menu"
-        >
-          <Menu className="size-5" />
-        </button>
-      </div>
-
-      {/* Conteúdo */}
-      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32">
-        <img
-          src="/n3xai-logo.png"
-          alt="NEXAI Logo"
-          className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none"
-          draggable={false}
-        />
-        <p className="mt-3 text-white/90 text-base sm:text-lg">
-          The missing piece
-        </p>
-        <button
-          onClick={onScrollToHub}
-          className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
-        >
-          Entrar
-          <ChevronDown className="size-4" />
-        </button>
-      </div>
-
-      {/* Blend para fundo cinza base */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-neutral-700" />
-    </section>
-  );
-}
-
-/* =========================
-   App Principal
-========================= */
-export default function NEXAIHub() {
-  const [query, setQuery] = useState("");
-  const [activeTags, setActiveTags] = useState([]);
-  const [status, setStatus] = useState("todos");
-  const [projects, setProjects] = useState(initialProjects);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [showPortalDialog, setShowPortalDialog] = useState(false);
-  const [editingPortal, setEditingPortal] = useState(null);
-  const { dark, setDark } = useSystemTheme();
-
-  // Atalho: "/" foca a pesquisa
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "/") {
-        e.preventDefault();
-        document.getElementById("search")?.focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(savedDarkMode);
   }, []);
 
-  const tags = useMemo(() => {
-    const all = new Set();
-    projects.forEach((p) => p.tags?.forEach((t) => all.add(t)));
-    return Array.from(all).sort((a, b) => TAG_ORDER.indexOf(a) - TAG_ORDER.indexOf(b));
-  }, [projects]);
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode);
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return projects
-      .filter((p) => (status === "todos" ? true : p.status === status))
-      .filter((p) => (activeTags.length ? activeTags.every((t) => p.tags?.includes(t)) : true))
-      .filter((p) => (q ? [p.title, p.desc, ...(p.tags || [])].join(" ").toLowerCase().includes(q) : true))
-      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.title.localeCompare(b.title));
-  }, [projects, query, activeTags, status]);
+  // Filtrar projetos
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === "Todos" || project.status === statusFilter;
+    const matchesTag = !tagFilter || project.tags.some(tag => tag.toLowerCase().includes(tagFilter.toLowerCase()));
+    
+    return matchesSearch && matchesStatus && matchesTag;
+  });
 
-  const toggleTag = (t) => setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
-  
-  const clearFilters = () => {
-    setActiveTags([]);
-    setStatus("todos");
-    setQuery("");
-  };
+  // Ordenar projetos (fixados primeiro)
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return 0;
+  });
+
+  // Obter todas as tags únicas
+  const allTags = [...new Set(projects.flatMap(p => p.tags))];
 
   const handleLogin = () => {
-    setIsAuthenticated(true);
-    setShowLoginDialog(false);
+    if (loginPassword === "admin123") {
+      setIsAdmin(true);
+      setShowLoginDialog(false);
+      setLoginPassword("");
+    } else {
+      alert("Palavra-passe incorreta!");
+    }
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
-  const handleSavePortal = (portalData) => {
-    if (editingPortal) {
-      // Editar portal existente
-      setProjects(prev => prev.map(p => p.id === editingPortal.id ? portalData : p));
+  const handleAddProject = () => {
+    setEditingProject(null);
+    setFormData({
+      title: "",
+      description: "",
+      url: "",
+      status: "ativo",
+      icon: "Puzzle",
+      tags: "",
+      pinned: false
+    });
+    setShowProjectDialog(true);
+  };
+
+  const handleEditProject = (project) => {
+    setEditingProject(project);
+    setFormData({
+      title: project.title,
+      description: project.description,
+      url: project.url,
+      status: project.status,
+      icon: project.icon,
+      tags: project.tags.join(", "),
+      pinned: project.pinned
+    });
+    setShowProjectDialog(true);
+  };
+
+  const handleDeleteProject = (projectId) => {
+    if (confirm("Tem a certeza que deseja eliminar este portal?")) {
+      setProjects(projects.filter(p => p.id !== projectId));
+    }
+  };
+
+  const handleSaveProject = () => {
+    if (!formData.title || !formData.description || !formData.url) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    const projectData = {
+      ...formData,
+      tags: formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag),
+      id: editingProject ? editingProject.id : Date.now()
+    };
+
+    if (editingProject) {
+      setProjects(projects.map(p => p.id === editingProject.id ? projectData : p));
     } else {
-      // Adicionar novo portal
-      setProjects(prev => [...prev, portalData]);
+      setProjects([...projects, projectData]);
     }
-    setEditingPortal(null);
+
+    setShowProjectDialog(false);
   };
 
-  const handleEditPortal = (portal) => {
-    setEditingPortal(portal);
-    setShowPortalDialog(true);
-  };
-
-  const handleDeletePortal = (portal) => {
-    if (confirm(`Tem a certeza que deseja eliminar o portal "${portal.title}"?`)) {
-      setProjects(prev => prev.filter(p => p.id !== portal.id));
-    }
-  };
-
-  const handleAddPortal = () => {
-    setEditingPortal(null);
-    setShowPortalDialog(true);
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("Todos");
+    setTagFilter("");
   };
 
   return (
-    <div className="min-h-screen bg-neutral-700 text-white">
-      <Hero
-        onScrollToHub={() => {
-          const el = document.getElementById("hub");
-          el?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }}
-      />
-
-      <section id="hub" className="relative mx-auto max-w-7xl p-4 sm:p-6">
-        {/* Header com logo */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <motion.div initial={{ rotate: -6, scale: 0.9 }} animate={{ rotate: 0, scale: 1 }} className="rounded-2xl border border-white/10 p-2">
-              <Puzzle className="size-6" />
-            </motion.div>
-            <div>
-              <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none" draggable={false} />
-              <p className="text-sm text-white/75">O ponto único para todos os teus portais e ferramentas.</p>
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-8 w-auto" />
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                NEXAI Hub
+              </h1>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center space-x-2">
-              <Switch id="theme" checked={dark} onCheckedChange={setDark} />
-              <Label htmlFor="theme" className="text-sm">Tema escuro</Label>
+            
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                {darkMode ? <Sun className="w-5 h-5 text-gray-600 dark:text-gray-300" /> : <Moon className="w-5 h-5 text-gray-600" />}
+              </button>
+              
+              {isAdmin ? (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleAddProject}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Adicionar Portal</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowLoginDialog(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Admin Login</span>
+                </button>
+              )}
             </div>
-
-            {/* Lógica de Administração */}
-            {isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <Button size="sm" className="rounded-xl" onClick={handleAddPortal}>
-                  <Plus className="mr-2 size-4" /> Adicionar Portal
-                </Button>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={handleLogout}>
-                        <LogOut className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Sair da administração</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            ) : (
-              <Button size="sm" className="rounded-xl" onClick={() => setShowLoginDialog(true)}>
-                <UserCog className="mr-2 size-4" /> Admin Login
-              </Button>
-            )}
           </div>
         </div>
+      </header>
 
-        <Separator className="my-4 border-white/10" />
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
+        <div className="absolute inset-0 bg-black opacity-20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold mb-4">O ponto único para todos os teus portais e ferramentas</h2>
+          <p className="text-xl opacity-90">Acede rapidamente a todas as aplicações e serviços da NEXAI</p>
+        </div>
+      </div>
 
-        {/* Search & Filters */}
-        <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-          <div className="flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 bg-white/5">
-            <Search className="size-4" />
-            <Input
-              id="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Pesquisar por título, descrição ou tag… (atalho: /)"
-              className="border-0 focus-visible:ring-0 bg-transparent text-white placeholder:text-white/60"
-            />
-          </div>
-          <Tabs value={status} onValueChange={setStatus} className="justify-self-start">
-            <TabsList className="grid grid-cols-5 bg-white/5 border border-white/10 rounded-xl">
-              <TabsTrigger value="todos">Todos</TabsTrigger>
-              {STATUS_OPTIONS.map((s) => (
-                <TabsTrigger key={s} value={s} className="capitalize">{s}</TabsTrigger>
+      {/* Filters */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Pesquisar por título, descrição ou tag..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="Todos">Todos</option>
+              {STATUS_OPTIONS.map(status => (
+                <option key={status} value={status}>{status}</option>
               ))}
-            </TabsList>
-          </Tabs>
-          <div className="justify-self-end">
-            <Button variant="ghost" size="sm" className="rounded-xl" onClick={clearFilters}>
-              <Filter className="mr-2 size-4" />Limpar filtros
-            </Button>
+            </select>
+
+            {/* Clear Filters */}
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              Limpar filtros
+            </button>
+          </div>
+
+          {/* Tags */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Tags:</span>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setTagFilter(tagFilter === tag ? "" : tag)}
+                className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  tagFilter === tag
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Tags */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Badge variant="outline" className="rounded-full text-[10px] flex items-center gap-1 border-white/20 text-white/85">
-            <Tags className="size-3" />Tags
-          </Badge>
-          {tags.map((t) => (
-            <Tag key={t} label={t} active={activeTags.includes(t)} onClick={() => toggleTag(t)} />
-          ))}
+        {/* Projects Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {sortedProjects.map((project) => (
+              <motion.div
+                key={project.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700 relative group"
+              >
+                {project.pinned && (
+                  <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs px-2 py-1 rounded-full font-medium">
+                    Fixado
+                  </div>
+                )}
+
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        {ICON_MAP[project.icon]}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{project.title}</h3>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[project.status]}`}></span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400 capitalize">{project.status}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isAdmin && (
+                      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditProject(project)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProject(project.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{project.description}</p>
+
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {project.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <a
+                    href={project.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Abrir
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
 
-        {/* Grid */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((p) => (
-            <ProjectCard 
-              key={p.id} 
-              p={p} 
-              isAuthenticated={isAuthenticated}
-              onEdit={handleEditPortal}
-              onDelete={handleDeletePortal}
-            />
-          ))}
-          {filtered.length === 0 && (
-            <div className="col-span-full text-center text-white/75 py-16">
-              <Search className="mx-auto mb-3 size-6" />
-              <p>Nada encontrado com esses filtros.</p>
-            </div>
-          )}
-        </div>
+        {sortedProjects.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 dark:text-gray-400">Nenhum portal encontrado com os filtros aplicados.</p>
+          </div>
+        )}
+      </div>
 
-        {/* Footer */}
-        <div className="mt-10 text-center text-xs text-white/60">
-          <div className="flex items-center justify-center gap-2">
-            <Puzzle className="size-3" />
-            <span>NEXAI • Hub — o teu ponto único de acesso</span>
+      {/* Login Dialog */}
+      <AnimatePresence>
+        {showLoginDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Login de Administrador</h3>
+                <button
+                  onClick={() => setShowLoginDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Digite a palavra-passe..."
+                  />
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowLoginDialog(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleLogin}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Entrar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Project Dialog */}
+      <AnimatePresence>
+        {showProjectDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {editingProject ? 'Editar Portal' : 'Adicionar Novo Portal'}
+                </h3>
+                <button
+                  onClick={() => setShowProjectDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Título *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Nome do portal..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Descrição *
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Descrição do portal..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    URL *
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => setFormData({...formData, url: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Estado
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {STATUS_OPTIONS.map(status => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ícone
+                    </label>
+                    <select
+                      value={formData.icon}
+                      onChange={(e) => setFormData({...formData, icon: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {ICON_OPTIONS.map(icon => (
+                        <option key={icon} value={icon}>{icon}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tags (separadas por vírgula)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tags}
+                    onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="ExpressGlass, Operações, Front-end"
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="pinned"
+                    checked={formData.pinned}
+                    onChange={(e) => setFormData({...formData, pinned: e.target.checked})}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <label htmlFor="pinned" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Portal fixado (aparece primeiro)
+                  </label>
+                </div>
+                
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowProjectDialog(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveProject}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {editingProject ? 'Guardar Alterações' : 'Criar Portal'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Footer */}
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center text-gray-500 dark:text-gray-400">
+            <p>© NEXAI • Hub — o teu ponto único de acesso</p>
           </div>
         </div>
-      </section>
-
-      {/* Diálogos */}
-      <LoginDialog 
-        isOpen={showLoginDialog} 
-        onClose={() => setShowLoginDialog(false)} 
-        onLogin={handleLogin} 
-      />
-      
-      <PortalDialog 
-        isOpen={showPortalDialog} 
-        onClose={() => setShowPortalDialog(false)} 
-        portal={editingPortal}
-        onSave={handleSavePortal}
-        isEdit={!!editingPortal}
-      />
+      </footer>
     </div>
   );
 }
+
+export default App;
