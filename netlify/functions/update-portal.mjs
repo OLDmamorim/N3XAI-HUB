@@ -1,4 +1,4 @@
-// /.netlify/functions/update-portal.mjs - Atualizar portal (sem user_id)
+// /.netlify/functions/update-portal.mjs - Atualizar portal (Neon sql tag, sem sql.unsafe)
 import { jsonHeaders, sql, init } from './db-portals.mjs';
 
 const ok = (data) => ({
@@ -32,25 +32,42 @@ export const handler = async (event) => {
     const data = JSON.parse(event.body || '{}');
     const { id, title, desc, url, tags, status, icon, pinned } = data;
     if (!id) return err(400, 'ID é obrigatório');
+
     const tagsArray = Array.isArray(tags)
       ? tags
       : typeof tags === 'string'
       ? tags.split(',').map((t) => t.trim()).filter(Boolean)
       : null;
-    const fields = [];
-    if (typeof title !== 'undefined') fields.push({ key: 'title', val: title });
-    if (typeof desc !== 'undefined') fields.push({ key: 'description', val: desc });
-    if (typeof url !== 'undefined') fields.push({ key: 'url', val: url });
-    if (tagsArray !== null) fields.push({ key: 'tags', val: tagsArray });
-    if (typeof status !== 'undefined') fields.push({ key: 'status', val: status });
-    if (typeof icon !== 'undefined') fields.push({ key: 'icon', val: icon });
-    if (typeof pinned !== 'undefined') fields.push({ key: 'pinned', val: !!pinned });
-    if (!fields.length) return err(400, 'Nada para atualizar');
-    const sets = fields.map((f, i) => `${f.key} = $${i + 1}`).join(', ');
-    const values = fields.map((f) => f.val);
-    const query = `UPDATE portals SET ${sets}, updated_at = NOW() WHERE id = $${fields.length + 1} RETURNING id`;
-    const result = await sql.unsafe(query, [...values, id]);
+
+    // Se nada para atualizar, avisa
+    if (
+      typeof title === 'undefined' &&
+      typeof desc === 'undefined' &&
+      typeof url === 'undefined' &&
+      typeof tagsArray === 'undefined' &&
+      typeof status === 'undefined' &&
+      typeof icon === 'undefined' &&
+      typeof pinned === 'undefined'
+    ) {
+      return err(400, 'Nada para atualizar');
+    }
+
+    const result = await sql/*sql*/`
+      UPDATE portals SET
+        title = COALESCE(${typeof title !== 'undefined' ? title : null}, title),
+        description = COALESCE(${typeof desc !== 'undefined' ? desc : null}, description),
+        url = COALESCE(${typeof url !== 'undefined' ? url : null}, url),
+        tags = COALESCE(${tagsArray !== null ? tagsArray : null}, tags),
+        status = COALESCE(${typeof status !== 'undefined' ? status : null}, status),
+        icon = COALESCE(${typeof icon !== 'undefined' ? icon : null}, icon),
+        pinned = COALESCE(${typeof pinned === 'boolean' ? pinned : null}, pinned),
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING id
+    `;
+
     if (!result.length) return err(404, 'Portal não encontrado');
+
     return ok({ ok: true, id, message: 'Portal atualizado com sucesso' });
   } catch (e) {
     console.error('Erro ao atualizar portal:', e);
