@@ -1,42 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './App.css';
 
-/* =========================
-   Dados base
-========================= */
-const initialProjects = [
-  {
-    id: "agendamentos",
-    title: "ExpressGlass • Agendamentos",
-    desc: "Portal para marcação e gestão de serviços por loja e serviço móvel.",
-    url: "https://example.com/agendamentos",
-    tags: ["ExpressGlass", "Operações", "Front-end"],
-    status: "ativo",
-    icon: "calendar",
-    pinned: true,
-  },
-  {
-    id: "ocr",
-    title: "Express OCR",
-    desc: "Leitura de Eurocodes e etiquetas com validação e base de dados.",
-    url: "https://example.com/ocr",
-    tags: ["OCR", "Operações", "BD"],
-    status: "ativo",
-    icon: "scan",
-    pinned: true,
-  },
-  {
-    id: "rececao-material",
-    title: "Receção de Material",
-    desc: "Registo de entradas, reconciliação e controlo de stock em loja.",
-    url: "https://example.com/rececao",
-    tags: ["Stock", "Operações"],
-    status: "em teste",
-    icon: "package",
-    pinned: false,
-  },
-];
-
+// Configurações
+const API_BASE = 'https://api.neon.tech/v2/projects/ep-frosty-queen-ab0gey1y/branches/main/databases/neondb/query';
+const NEON_API_KEY = 'npg_7Iuo9gJFcLyj'; // Sua API key do Neon
 const TAG_ORDER = ["ExpressGlass", "Operações", "OCR", "Stock", "Notion", "Automação", "Front-end", "BD", "Admin", "Permissões", "Pessoal", "Prototipagem"];
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
 const ICON_OPTIONS = [
@@ -56,24 +23,151 @@ const getIconSymbol = (iconValue) => {
   return icon ? icon.symbol : "◈";
 };
 
-/* =========================
-   Tema escuro
-========================= */
-function useSystemTheme() {
-  const prefersDark =
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const [dark, setDark] = useState(prefersDark);
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
-  return { dark, setDark };
-}
+// API functions usando Neon diretamente
+const api = {
+  async query(sql, params = []) {
+    const response = await fetch(API_BASE, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${NEON_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: sql,
+        params: params
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro na consulta à base de dados');
+    }
+    
+    const data = await response.json();
+    return data.results?.[0]?.rows || [];
+  },
 
-/* =========================
-   Componentes UI
-========================= */
+  async getPortals() {
+    try {
+      const rows = await this.query(`
+        SELECT id, title, description as desc, url, tags, status, icon, pinned, 
+               created_at, updated_at
+        FROM portals 
+        ORDER BY pinned DESC, title ASC
+      `);
+      
+      return rows.map(row => ({
+        ...row,
+        tags: row.tags ? JSON.parse(row.tags) : [],
+        pinned: Boolean(row.pinned)
+      }));
+    } catch (error) {
+      console.error('Erro ao carregar portais:', error);
+      // Fallback para dados locais se a API falhar
+      return this.getLocalPortals();
+    }
+  },
+
+  async createPortal(data, token) {
+    if (token !== 'admin123') throw new Error('Não autorizado');
+    
+    const id = data.id || `portal-${Date.now()}`;
+    const tags = Array.isArray(data.tags) ? data.tags : 
+                 typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    
+    await this.query(`
+      INSERT INTO portals (id, title, description, url, tags, status, icon, pinned)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [
+      id,
+      data.title,
+      data.desc,
+      data.url,
+      JSON.stringify(tags),
+      data.status || 'ativo',
+      data.icon || 'puzzle',
+      data.pinned ? 1 : 0
+    ]);
+    
+    return { id, message: 'Portal criado com sucesso' };
+  },
+
+  async updatePortal(id, data, token) {
+    if (token !== 'admin123') throw new Error('Não autorizado');
+    
+    const tags = Array.isArray(data.tags) ? data.tags : 
+                 typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    
+    await this.query(`
+      UPDATE portals 
+      SET title = $1, description = $2, url = $3, tags = $4, 
+          status = $5, icon = $6, pinned = $7, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $8
+    `, [
+      data.title,
+      data.desc,
+      data.url,
+      JSON.stringify(tags),
+      data.status || 'ativo',
+      data.icon || 'puzzle',
+      data.pinned ? 1 : 0,
+      id
+    ]);
+    
+    return { message: 'Portal atualizado com sucesso' };
+  },
+
+  async deletePortal(id, token) {
+    if (token !== 'admin123') throw new Error('Não autorizado');
+    
+    await this.query('DELETE FROM portals WHERE id = $1', [id]);
+    return { message: 'Portal eliminado com sucesso' };
+  },
+
+  async login(password) {
+    if (password === 'admin123') {
+      return { token: 'admin123', message: 'Login bem-sucedido' };
+    }
+    throw new Error('Palavra-passe incorreta');
+  },
+
+  // Fallback para dados locais
+  getLocalPortals() {
+    return [
+      {
+        id: 'agendamentos',
+        title: 'ExpressGlass • Agendamentos',
+        desc: 'Portal para marcação e gestão de serviços por loja e serviço móvel.',
+        url: 'https://example.com/agendamentos',
+        tags: ['ExpressGlass', 'Operações', 'Front-end'],
+        status: 'ativo',
+        icon: 'calendar',
+        pinned: true
+      },
+      {
+        id: 'ocr',
+        title: 'Express OCR',
+        desc: 'Leitura de Eurocodes e etiquetas com validação e base de dados.',
+        url: 'https://example.com/ocr',
+        tags: ['OCR', 'Operações', 'BD'],
+        status: 'ativo',
+        icon: 'scan',
+        pinned: true
+      },
+      {
+        id: 'rececao-material',
+        title: 'Receção de Material',
+        desc: 'Registo de entradas, reconciliação e controlo de stock em loja.',
+        url: 'https://example.com/rececao',
+        tags: ['Stock', 'Operações'],
+        status: 'em teste',
+        icon: 'package',
+        pinned: false
+      }
+    ];
+  }
+};
+
+// Componentes
 function Tag({ label, onClick, active }) {
   return (
     <span
@@ -92,7 +186,6 @@ function Tag({ label, onClick, active }) {
 function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
   return (
     <div className="group transition-shadow duration-200 rounded-2xl bg-white/5 text-white border border-white/10 hover:shadow-lg p-6 relative">
-      {/* Admin actions */}
       {isAdmin && (
         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -150,72 +243,41 @@ function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
   );
 }
 
-/* =========================
-   Hero
-========================= */
 function Hero({ onScrollToHub }) {
   return (
-    <section
-      className="
-        relative h-[86vh] min-h-[560px] w-full
-        bg-neutral-700
-        bg-[url('/face-swap.png')] bg-cover bg-center bg-fixed
-        overflow-hidden
-      "
-    >
-      {/* Overlay escuro */}
+    <section className="relative h-[86vh] min-h-[560px] w-full bg-neutral-700 bg-[url('/face-swap.png')] bg-cover bg-center bg-fixed overflow-hidden">
       <div className="absolute inset-0 bg-black/45 pointer-events-none" />
-
-      {/* Top bar */}
+      
       <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
         <div className="flex items-center gap-2 text-white">
-          <div className="rounded-full border border-white/40 p-2">
-            ◈
-          </div>
+          <div className="rounded-full border border-white/40 p-2">◈</div>
           <span className="font-semibold tracking-wide">NEXAI</span>
         </div>
-        <button
-          className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white"
-          aria-label="Abrir menu"
-        >
-          ☰
-        </button>
+        <button className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white" aria-label="Abrir menu">☰</button>
       </div>
 
-      {/* Conteúdo */}
       <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32">
-        <img
-          src="/n3xai-logo.png"
-          alt="NEXAI Logo"
-          className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none"
-          draggable={false}
-        />
-        <p className="mt-3 text-white/90 text-base sm:text-lg">
-          The missing piece
-        </p>
-        <button
-          onClick={onScrollToHub}
-          className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
-        >
+        <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none" draggable={false} />
+        <p className="mt-3 text-white/90 text-base sm:text-lg">The missing piece</p>
+        <button onClick={onScrollToHub} className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white">
           Entrar ↓
         </button>
       </div>
 
-      {/* Blend para fundo cinza base */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-neutral-700" />
     </section>
   );
 }
 
-/* =========================
-   App Principal
-========================= */
-export default function NEXAIHub() {
+// App principal
+function NEXAIHub() {
   const [query, setQuery] = useState("");
   const [activeTags, setActiveTags] = useState([]);
   const [status, setStatus] = useState("todos");
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminToken, setAdminToken] = useState("");
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -224,9 +286,8 @@ export default function NEXAIHub() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [formError, setFormError] = useState("");
-  const { dark, setDark } = useSystemTheme();
+  const [saving, setSaving] = useState(false);
 
-  // Formulário de projeto
   const [formData, setFormData] = useState({
     title: "",
     desc: "",
@@ -236,6 +297,23 @@ export default function NEXAIHub() {
     tags: "",
     pinned: false
   });
+
+  // Carregar portais
+  useEffect(() => {
+    loadPortals();
+  }, []);
+
+  const loadPortals = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getPortals();
+      setProjects(data);
+    } catch (error) {
+      console.error('Erro ao carregar portais:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Atalho: "/" foca a pesquisa
   useEffect(() => {
@@ -273,19 +351,22 @@ export default function NEXAIHub() {
   };
 
   // Admin functions
-  const handleLogin = () => {
-    if (loginPassword === "admin123") {
+  const handleLogin = async () => {
+    try {
+      setLoginError("");
+      const result = await api.login(loginPassword);
       setIsAdmin(true);
+      setAdminToken(result.token);
       setShowLoginDialog(false);
       setLoginPassword("");
-      setLoginError("");
-    } else {
-      setLoginError("Palavra-passe incorreta!");
+    } catch (error) {
+      setLoginError(error.message);
     }
   };
 
   const handleLogout = () => {
     setIsAdmin(false);
+    setAdminToken("");
   };
 
   const handleAddProject = () => {
@@ -311,7 +392,7 @@ export default function NEXAIHub() {
       url: project.url,
       status: project.status,
       icon: project.icon,
-      tags: project.tags.join(", "),
+      tags: Array.isArray(project.tags) ? project.tags.join(", ") : "",
       pinned: project.pinned
     });
     setFormError("");
@@ -323,68 +404,87 @@ export default function NEXAIHub() {
     setShowDeleteDialog(true);
   };
 
-  const confirmDelete = () => {
-    if (deletingProject) {
-      setProjects(projects.filter(p => p.id !== deletingProject.id));
+  const confirmDelete = async () => {
+    if (!deletingProject) return;
+    
+    try {
+      await api.deletePortal(deletingProject.id, adminToken);
+      await loadPortals(); // Recarregar lista
       setShowDeleteDialog(false);
       setDeletingProject(null);
+    } catch (error) {
+      alert('Erro ao eliminar portal: ' + error.message);
     }
   };
 
-  const handleSaveProject = () => {
-    // Validação simples
-    if (!formData.title) {
+  const handleSaveProject = async () => {
+    if (!formData.title.trim()) {
       setFormError("Título é obrigatório");
       return;
     }
     
-    if (!formData.desc) {
+    if (!formData.desc.trim()) {
       setFormError("Descrição é obrigatória");
       return;
     }
     
-    if (!formData.url) {
+    if (!formData.url.trim()) {
       setFormError("URL é obrigatória");
       return;
     }
 
-    const projectData = {
-      id: editingProject ? editingProject.id : `project-${Date.now()}`,
-      title: formData.title,
-      desc: formData.desc,
-      url: formData.url,
-      status: formData.status,
-      icon: formData.icon,
-      tags: formData.tags ? formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag) : [],
-      pinned: formData.pinned
-    };
+    try {
+      setSaving(true);
+      setFormError("");
 
-    if (editingProject) {
-      setProjects(prev => prev.map(p => p.id === editingProject.id ? projectData : p));
-    } else {
-      setProjects(prev => [...prev, projectData]);
+      const projectData = {
+        title: formData.title.trim(),
+        desc: formData.desc.trim(),
+        url: formData.url.trim(),
+        status: formData.status,
+        icon: formData.icon,
+        tags: formData.tags,
+        pinned: formData.pinned
+      };
+
+      if (editingProject) {
+        await api.updatePortal(editingProject.id, projectData, adminToken);
+      } else {
+        await api.createPortal(projectData, adminToken);
+      }
+
+      await loadPortals(); // Recarregar lista
+      setShowProjectDialog(false);
+    } catch (error) {
+      setFormError(error.message);
+    } finally {
+      setSaving(false);
     }
-
-    setShowProjectDialog(false);
-    setFormError("");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-700 text-white flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="spinner"></div>
+          <span>A carregar portais...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-700 text-white">
-      <Hero
-        onScrollToHub={() => {
-          const el = document.getElementById("hub");
-          el?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }}
-      />
+      <Hero onScrollToHub={() => {
+        const el = document.getElementById("hub");
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }} />
 
       <section id="hub" className="relative mx-auto max-w-7xl p-4 sm:p-6">
-        {/* Header com logo */}
+        {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-white/10 p-2">
-              ◈
-            </div>
+            <div className="rounded-2xl border border-white/10 p-2">◈</div>
             <div>
               <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none" draggable={false} />
               <p className="text-sm text-white/75">O ponto único para todos os teus portais e ferramentas.</p>
@@ -392,17 +492,6 @@ export default function NEXAIHub() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="theme" 
-                checked={dark} 
-                onChange={(e) => setDark(e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="theme" className="text-sm">Tema escuro</label>
-            </div>
-            
             {isAdmin ? (
               <div className="flex items-center gap-2">
                 <button 
@@ -514,15 +603,7 @@ export default function NEXAIHub() {
           <div className="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-white/10">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Login de Administrador</h3>
-              <button
-                onClick={() => {
-                  setShowLoginDialog(false);
-                  setLoginError("");
-                }}
-                className="text-white/60 hover:text-white"
-              >
-                ✕
-              </button>
+              <button onClick={() => { setShowLoginDialog(false); setLoginError(""); }} className="text-white/60 hover:text-white">✕</button>
             </div>
             
             <div className="space-y-4">
@@ -542,19 +623,10 @@ export default function NEXAIHub() {
               </div>
               
               <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowLoginDialog(false);
-                    setLoginError("");
-                  }}
-                  className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white"
-                >
+                <button onClick={() => { setShowLoginDialog(false); setLoginError(""); }} className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white">
                   Cancelar
                 </button>
-                <button
-                  onClick={handleLogin}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90"
-                >
+                <button onClick={handleLogin} className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90">
                   Entrar
                 </button>
               </div>
@@ -563,33 +635,22 @@ export default function NEXAIHub() {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       {showDeleteDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-white/10">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Confirmar Eliminação</h3>
-              <button
-                onClick={() => setShowDeleteDialog(false)}
-                className="text-white/60 hover:text-white"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowDeleteDialog(false)} className="text-white/60 hover:text-white">✕</button>
             </div>
             
             <p className="mb-6">Tem a certeza que deseja eliminar o portal "{deletingProject?.title}"?</p>
             
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteDialog(false)}
-                className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white"
-              >
+              <button onClick={() => setShowDeleteDialog(false)} className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white">
                 Cancelar
               </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700"
-              >
+              <button onClick={confirmDelete} className="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700">
                 Eliminar
               </button>
             </div>
@@ -605,15 +666,7 @@ export default function NEXAIHub() {
               <h3 className="text-lg font-semibold">
                 {editingProject ? 'Editar Portal' : 'Adicionar Novo Portal'}
               </h3>
-              <button
-                onClick={() => {
-                  setShowProjectDialog(false);
-                  setFormError("");
-                }}
-                className="text-white/60 hover:text-white"
-              >
-                ✕
-              </button>
+              <button onClick={() => { setShowProjectDialog(false); setFormError(""); }} className="text-white/60 hover:text-white">✕</button>
             </div>
             
             {formError && (
@@ -709,19 +762,15 @@ export default function NEXAIHub() {
               </div>
               
               <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowProjectDialog(false);
-                    setFormError("");
-                  }}
-                  className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white"
-                >
+                <button onClick={() => { setShowProjectDialog(false); setFormError(""); }} className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white">
                   Cancelar
                 </button>
-                <button
-                  onClick={handleSaveProject}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90"
+                <button 
+                  onClick={handleSaveProject} 
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90 flex items-center justify-center gap-2"
                 >
+                  {saving && <div className="spinner"></div>}
                   {editingProject ? 'Guardar Alterações' : 'Criar Portal'}
                 </button>
               </div>
@@ -732,3 +781,5 @@ export default function NEXAIHub() {
     </div>
   );
 }
+
+export default NEXAIHub;
