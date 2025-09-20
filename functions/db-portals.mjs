@@ -1,18 +1,17 @@
-
 // Helper de ligação ao Neon + criação da tabela de portais na 1ª execução
-import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 
 const CONN = process.env.NEON_DATABASE_URL;
 if (!CONN) throw new Error('NEON_DATABASE_URL não definido');
 
-export const sql = neon(CONN);
+export const sql = postgres(CONN);
 
 let inited = false;
 export async function init() {
   if (inited) return;
   
   // Criar tabela de portais se não existir
-  await sql/*sql*/`
+  await sql`
     CREATE TABLE IF NOT EXISTS portals (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -29,10 +28,10 @@ export async function init() {
   `;
 
   // Inserir dados iniciais se a tabela estiver vazia
-  const count = await sql/*sql*/`SELECT COUNT(*) as count FROM portals`;
+  const count = await sql`SELECT COUNT(*) as count FROM portals`;
   
   if (count[0].count === 0) {
-    await sql/*sql*/`
+    await sql`
       INSERT INTO portals (id, title, description, url, tags, status, icon, pinned, user_id)
       VALUES 
         ('agendamentos', 'ExpressGlass • Agendamentos', 'Portal para marcação e gestão de serviços por loja e serviço móvel.', 'https://example.com/agendamentos', ARRAY['ExpressGlass', 'Operações', 'Front-end'], 'ativo', 'calendar', true, 1),
