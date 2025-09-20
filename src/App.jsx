@@ -60,6 +60,11 @@ const ICON_MAP = {
   Puzzle: <Puzzle size={20} />,
 };
 
+// Função para converter status para classe CSS válida
+const getStatusClass = (status) => {
+  return `status-${status.replace(/\s+/g, '-')}`;
+};
+
 function App() {
   const [projects, setProjects] = useState(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
@@ -295,7 +300,7 @@ function App() {
                   <div>
                     <h3>{project.title}</h3>
                     <div className="status-row">
-                      <span className={`status-dot status-${project.status}`}></span>
+                      <span className={`status-dot ${getStatusClass(project.status)}`}></span>
                       <span className="status-text">{project.status}</span>
                     </div>
                   </div>
