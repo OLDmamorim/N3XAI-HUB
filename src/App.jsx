@@ -102,11 +102,7 @@ function Tag({ label, onClick, active }) {
   return (
     <span
       onClick={onClick}
-      className={`cursor-pointer select-none rounded-full px-3 py-1 text-xs border transition-all ${
-        active 
-          ? "bg-white text-neutral-800 border-white shadow" 
-          : "bg-white/10 text-white/85 border-white/20 opacity-90 hover:opacity-100"
-      }`}
+      className={`tag ${active ? 'tag-active' : ''}`}
     >
       {label}
     </span>
@@ -115,19 +111,19 @@ function Tag({ label, onClick, active }) {
 
 function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
   return (
-    <div className="group transition-shadow duration-200 rounded-2xl bg-white/5 text-white border border-white/10 hover:shadow-lg p-6 relative">
+    <div className="project-card">
       {isAdmin && (
-        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="admin-buttons">
           <button
             onClick={() => onEdit(p)}
-            className="p-1 rounded bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm"
+            className="admin-btn edit-btn"
             title="Editar"
           >
             ✏
           </button>
           <button
             onClick={() => onDelete(p)}
-            className="p-1 rounded bg-white/10 hover:bg-red-500/20 text-white/80 hover:text-red-300 text-sm"
+            className="admin-btn delete-btn"
             title="Eliminar"
           >
             ✕
@@ -135,29 +131,29 @@ function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
         </div>
       )}
 
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-white/85">
-          <div className="shrink-0 rounded-xl border border-white/10 p-2 text-lg text-white">
+      <div className="card-header">
+        <div className="icon-container">
+          <div className="project-icon">
             {getIconSymbol(p.icon)}
           </div>
-          <h3 className="text-base sm:text-lg leading-tight flex items-center gap-2 font-semibold">
+          <h3 className="project-title">
             {p.title}
             {p.pinned && (
-              <span className="text-white/60" title="Fixado">★</span>
+              <span className="pinned-icon" title="Fixado">★</span>
             )}
           </h3>
         </div>
       </div>
       
-      <div className="text-sm text-white/75 mb-4">
-        <p>{p.desc}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <div className="card-content">
+        <p className="project-description">{p.desc}</p>
+        <div className="tags-container">
           {p.tags?.map((t) => (
-            <span key={t} className="rounded-full text-[10px] border border-white/20 text-white/85 px-2 py-1">
+            <span key={t} className="project-tag">
               {t}
             </span>
           ))}
-          <span className="rounded-full text-[10px] capitalize bg-white/10 text-white px-2 py-1">{p.status}</span>
+          <span className="status-tag">{p.status}</span>
         </div>
       </div>
       
@@ -165,7 +161,7 @@ function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
         href={p.url} 
         target="_blank" 
         rel="noreferrer"
-        className="inline-flex items-center gap-2 rounded-xl bg-white text-neutral-800 hover:opacity-90 px-4 py-2 text-sm font-medium transition-opacity"
+        className="open-button"
       >
         Abrir →
       </a>
@@ -175,26 +171,26 @@ function ProjectCard({ p, isAdmin, onEdit, onDelete }) {
 
 function Hero({ onScrollToHub }) {
   return (
-    <section className="relative h-[86vh] min-h-[560px] w-full bg-neutral-700 bg-[url('/face-swap.png')] bg-cover bg-center bg-fixed overflow-hidden">
-      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+    <section className="hero">
+      <div className="hero-overlay" />
       
-      <div className="relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8">
-        <div className="flex items-center gap-2 text-white">
-          <div className="rounded-full border border-white/40 p-2">◈</div>
-          <span className="font-semibold tracking-wide">NEXAI</span>
+      <div className="hero-header">
+        <div className="logo-container">
+          <div className="logo-icon">◈</div>
+          <span className="logo-text">NEXAI</span>
         </div>
-        <button className="rounded-full border border-white/40 p-2 text-white/90 hover:text-white" aria-label="Abrir menu">☰</button>
+        <button className="menu-button" aria-label="Abrir menu">☰</button>
       </div>
 
-      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-start justify-end px-5 sm:px-8 pb-20 sm:pb-28 md:pb-32">
-        <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-16 sm:h-20 md:h-24 drop-shadow-md select-none" draggable={false} />
-        <p className="mt-3 text-white/90 text-base sm:text-lg">The missing piece</p>
-        <button onClick={onScrollToHub} className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white">
+      <div className="hero-content">
+        <img src="/n3xai-logo.png" alt="NEXAI Logo" className="hero-logo" />
+        <p className="hero-subtitle">The missing piece</p>
+        <button onClick={onScrollToHub} className="enter-button">
           Entrar ↓
         </button>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-neutral-700" />
+      <div className="hero-gradient" />
     </section>
   );
 }
@@ -394,8 +390,8 @@ function NEXAIHub() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-700 text-white flex items-center justify-center">
-        <div className="flex items-center gap-3">
+      <div className="loading-screen">
+        <div className="loading-content">
           <div className="spinner"></div>
           <span>A carregar portais...</span>
         </div>
@@ -404,35 +400,35 @@ function NEXAIHub() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-700 text-white">
+    <div className="app">
       <Hero onScrollToHub={() => {
         const el = document.getElementById("hub");
         el?.scrollIntoView({ behavior: "smooth", block: "start" });
       }} />
 
-      <section id="hub" className="relative mx-auto max-w-7xl p-4 sm:p-6">
+      <section id="hub" className="hub-section">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-white/10 p-2">◈</div>
+        <div className="hub-header">
+          <div className="hub-title">
+            <div className="hub-icon">◈</div>
             <div>
-              <img src="/n3xai-logo.png" alt="NEXAI Logo" className="h-8 sm:h-10 md:h-12 drop-shadow-md select-none" draggable={false} />
-              <p className="text-sm text-white/75">O ponto único para todos os teus portais e ferramentas.</p>
+              <img src="/n3xai-logo.png" alt="NEXAI Logo" className="hub-logo" />
+              <p className="hub-subtitle">O ponto único para todos os teus portais e ferramentas.</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="hub-actions">
             {isAdmin ? (
-              <div className="flex items-center gap-2">
+              <div className="admin-actions">
                 <button 
                   onClick={handleAddProject}
-                  className="rounded-xl bg-white text-neutral-800 hover:opacity-90 px-4 py-2 text-sm font-medium"
+                  className="add-button"
                 >
                   + Adicionar Portal
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:text-white"
+                  className="logout-button"
                 >
                   ←
                 </button>
@@ -440,7 +436,7 @@ function NEXAIHub() {
             ) : (
               <button 
                 onClick={() => setShowLoginDialog(true)}
-                className="rounded-xl border border-white/40 px-4 py-2 text-sm text-white/90 hover:text-white"
+                className="login-button"
               >
                 ⚙ Admin Login
               </button>
@@ -448,25 +444,25 @@ function NEXAIHub() {
           </div>
         </div>
 
-        <div className="my-4 border-t border-white/10" />
+        <div className="divider" />
 
         {/* Search & Filters */}
-        <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-          <div className="flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 bg-white/5">
-            ⌕
+        <div className="filters-section">
+          <div className="search-container">
+            <span className="search-icon">⌕</span>
             <input
               id="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Pesquisar por título, descrição ou tag… (atalho: /)"
-              className="border-0 focus:outline-none bg-transparent text-white placeholder:text-white/60 flex-1"
+              className="search-input"
             />
           </div>
           
-          <div className="flex bg-white/5 border border-white/10 rounded-xl p-1">
+          <div className="status-filter">
             <button
               onClick={() => setStatus("todos")}
-              className={`px-3 py-1 rounded-lg text-sm ${status === "todos" ? "bg-white text-neutral-800" : "text-white/80"}`}
+              className={`status-btn ${status === "todos" ? "active" : ""}`}
             >
               Todos
             </button>
@@ -474,7 +470,7 @@ function NEXAIHub() {
               <button
                 key={s}
                 onClick={() => setStatus(s)}
-                className={`px-3 py-1 rounded-lg text-sm capitalize ${status === s ? "bg-white text-neutral-800" : "text-white/80"}`}
+                className={`status-btn ${status === s ? "active" : ""}`}
               >
                 {s}
               </button>
@@ -483,24 +479,22 @@ function NEXAIHub() {
           
           <button 
             onClick={clearFilters}
-            className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white/80 hover:text-white"
+            className="clear-button"
           >
             ↻ Limpar filtros
           </button>
         </div>
 
         {/* Tags */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <span className="rounded-full text-[10px] flex items-center gap-1 border border-white/20 text-white/85 px-2 py-1">
-            # Tags
-          </span>
+        <div className="tags-section">
+          <span className="tags-label"># Tags</span>
           {tags.map((t) => (
             <Tag key={t} label={t} active={activeTags.includes(t)} onClick={() => toggleTag(t)} />
           ))}
         </div>
 
         {/* Grid */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="projects-grid">
           {filtered.map((p) => (
             <ProjectCard 
               key={p.id} 
@@ -511,17 +505,17 @@ function NEXAIHub() {
             />
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full text-center text-white/75 py-16">
-              ⌕
-              <p className="mt-3">Nada encontrado com esses filtros.</p>
+            <div className="no-results">
+              <span className="no-results-icon">⌕</span>
+              <p>Nada encontrado com esses filtros.</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="mt-10 text-center text-xs text-white/60">
-          <div className="flex items-center justify-center gap-2">
-            ◈
+        <div className="footer">
+          <div className="footer-content">
+            <span>◈</span>
             <span>NEXAI • Hub — o teu ponto único de acesso</span>
           </div>
         </div>
@@ -529,34 +523,34 @@ function NEXAIHub() {
 
       {/* Login Dialog */}
       {showLoginDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-white/10">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Login de Administrador</h3>
-              <button onClick={() => { setShowLoginDialog(false); setLoginError(""); }} className="text-white/60 hover:text-white">✕</button>
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Login de Administrador</h3>
+              <button onClick={() => { setShowLoginDialog(false); setLoginError(""); }} className="close-btn">✕</button>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Palavra-passe</label>
+            <div className="modal-content">
+              <div className="form-group">
+                <label>Palavra-passe</label>
                 <input
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                   placeholder="Digite a palavra-passe..."
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
+                  className="form-input"
                 />
                 {loginError && (
-                  <div className="text-red-400 text-sm mt-2">{loginError}</div>
+                  <div className="error-message">{loginError}</div>
                 )}
               </div>
               
-              <div className="flex gap-3">
-                <button onClick={() => { setShowLoginDialog(false); setLoginError(""); }} className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white">
+              <div className="modal-actions">
+                <button onClick={() => { setShowLoginDialog(false); setLoginError(""); }} className="cancel-btn">
                   Cancelar
                 </button>
-                <button onClick={handleLogin} className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90">
+                <button onClick={handleLogin} className="confirm-btn">
                   Entrar
                 </button>
               </div>
@@ -567,20 +561,20 @@ function NEXAIHub() {
 
       {/* Delete Dialog */}
       {showDeleteDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-white/10">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Confirmar Eliminação</h3>
-              <button onClick={() => setShowDeleteDialog(false)} className="text-white/60 hover:text-white">✕</button>
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Confirmar Eliminação</h3>
+              <button onClick={() => setShowDeleteDialog(false)} className="close-btn">✕</button>
             </div>
             
-            <p className="mb-6">Tem a certeza que deseja eliminar o portal "{deletingProject?.title}"?</p>
+            <p className="modal-text">Tem a certeza que deseja eliminar o portal "{deletingProject?.title}"?</p>
             
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteDialog(false)} className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white">
+            <div className="modal-actions">
+              <button onClick={() => setShowDeleteDialog(false)} className="cancel-btn">
                 Cancelar
               </button>
-              <button onClick={confirmDelete} className="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700">
+              <button onClick={confirmDelete} className="delete-btn">
                 Eliminar
               </button>
             </div>
@@ -590,78 +584,78 @@ function NEXAIHub() {
 
       {/* Project Dialog */}
       {showProjectDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-800 rounded-2xl p-6 w-full max-w-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold">
+        <div className="modal-overlay">
+          <div className="modal large">
+            <div className="modal-header">
+              <h3>
                 {editingProject ? 'Editar Portal' : 'Adicionar Novo Portal'}
               </h3>
-              <button onClick={() => { setShowProjectDialog(false); setFormError(""); }} className="text-white/60 hover:text-white">✕</button>
+              <button onClick={() => { setShowProjectDialog(false); setFormError(""); }} className="close-btn">✕</button>
             </div>
             
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-sm">
+              <div className="error-banner">
                 {formError}
               </div>
             )}
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Título *</label>
+            <div className="modal-content">
+              <div className="form-group">
+                <label>Título *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   placeholder="Nome do portal..."
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
+                  className="form-input"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Descrição *</label>
+              <div className="form-group">
+                <label>Descrição *</label>
                 <textarea
                   value={formData.desc}
                   onChange={(e) => setFormData({...formData, desc: e.target.value})}
                   rows={3}
                   placeholder="Descrição do portal..."
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
+                  className="form-input"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">URL *</label>
+              <div className="form-group">
+                <label>URL *</label>
                 <input
                   type="text"
                   value={formData.url}
                   onChange={(e) => setFormData({...formData, url: e.target.value})}
                   placeholder="https://example.com"
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
+                  className="form-input"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Estado</label>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Estado</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="form-input"
                   >
                     {STATUS_OPTIONS.map(status => (
-                      <option key={status} value={status} className="bg-neutral-800">{status}</option>
+                      <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Ícone</label>
+                <div className="form-group">
+                  <label>Ícone</label>
                   <select
                     value={formData.icon}
                     onChange={(e) => setFormData({...formData, icon: e.target.value})}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="form-input"
                   >
                     {ICON_OPTIONS.map(icon => (
-                      <option key={icon.value} value={icon.value} className="bg-neutral-800">
+                      <option key={icon.value} value={icon.value}>
                         {icon.symbol} {icon.label}
                       </option>
                     ))}
@@ -669,36 +663,35 @@ function NEXAIHub() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Tags (separadas por vírgula)</label>
+              <div className="form-group">
+                <label>Tags (separadas por vírgula)</label>
                 <input
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({...formData, tags: e.target.value})}
                   placeholder="ExpressGlass, Operações, Front-end"
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/60 focus:outline-none focus:border-white/30"
+                  className="form-input"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="checkbox-group">
                 <input
                   type="checkbox"
                   id="pinned"
                   checked={formData.pinned}
                   onChange={(e) => setFormData({...formData, pinned: e.target.checked})}
-                  className="rounded"
                 />
-                <label htmlFor="pinned" className="text-sm">Portal fixado (aparece primeiro)</label>
+                <label htmlFor="pinned">Portal fixado (aparece primeiro)</label>
               </div>
               
-              <div className="flex gap-3 pt-4">
-                <button onClick={() => { setShowProjectDialog(false); setFormError(""); }} className="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white">
+              <div className="modal-actions">
+                <button onClick={() => { setShowProjectDialog(false); setFormError(""); }} className="cancel-btn">
                   Cancelar
                 </button>
                 <button 
                   onClick={handleSaveProject} 
                   disabled={saving}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white text-neutral-800 hover:opacity-90 flex items-center justify-center gap-2"
+                  className="confirm-btn"
                 >
                   {saving && <div className="spinner"></div>}
                   {editingProject ? 'Guardar Alterações' : 'Criar Portal'}
