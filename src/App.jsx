@@ -1,19 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CalendarCheck, 
-  ScanLine, 
-  FolderKanban, 
-  Puzzle,
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  Moon,
-  Sun,
-  LogOut,
-  User
-} from 'lucide-react';
 import './App.css';
 
 // Dados iniciais dos portais
@@ -24,7 +9,7 @@ const initialProjects = [
     description: "Leitura de Eurocodes e etiquetas com validação e base de dados.",
     url: "https://example.com/ocr",
     status: "ativo",
-    icon: "ScanLine",
+    icon: "📊",
     tags: ["OCR", "Operações", "BD", "Ativo"],
     pinned: true
   },
@@ -34,7 +19,7 @@ const initialProjects = [
     description: "Portal para marcação e gestão de serviços por loja e serviço móvel.",
     url: "https://example.com/agendamentos",
     status: "ativo",
-    icon: "CalendarCheck",
+    icon: "📅",
     tags: ["ExpressGlass", "Operações", "Front-end", "Ativo"],
     pinned: true
   },
@@ -44,21 +29,14 @@ const initialProjects = [
     description: "Registo de entradas, reconciliação e controlo de stock em loja.",
     url: "https://example.com/recepcao",
     status: "pausado",
-    icon: "FolderKanban",
+    icon: "📦",
     tags: ["Stock", "Operações", "Em Teste"],
     pinned: false
   }
 ];
 
 const STATUS_OPTIONS = ["ativo", "em teste", "em construção", "pausado"];
-const ICON_OPTIONS = ["CalendarCheck", "ScanLine", "FolderKanban", "Puzzle"];
-
-const ICON_MAP = {
-  CalendarCheck: <CalendarCheck size={20} />,
-  ScanLine: <ScanLine size={20} />,
-  FolderKanban: <FolderKanban size={20} />,
-  Puzzle: <Puzzle size={20} />,
-};
+const ICON_OPTIONS = ["📅", "📊", "📦", "🧩"];
 
 // Função para converter status para classe CSS válida
 const getStatusClass = (status) => {
@@ -83,7 +61,7 @@ function App() {
     description: "",
     url: "",
     status: "ativo",
-    icon: "Puzzle",
+    icon: "🧩",
     tags: "",
     pinned: false
   });
@@ -141,7 +119,7 @@ function App() {
       description: "",
       url: "",
       status: "ativo",
-      icon: "Puzzle",
+      icon: "🧩",
       tags: "",
       pinned: false
     });
@@ -207,22 +185,22 @@ function App() {
           
           <div className="header-right">
             <button onClick={() => setDarkMode(!darkMode)} className="icon-btn">
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {darkMode ? '☀️' : '🌙'}
             </button>
             
             {isAdmin ? (
               <div className="admin-controls">
                 <button onClick={handleAddProject} className="btn btn-primary">
-                  <Plus size={16} />
+                  <span>➕</span>
                   <span>Adicionar Portal</span>
                 </button>
                 <button onClick={handleLogout} className="icon-btn">
-                  <LogOut size={20} />
+                  🚪
                 </button>
               </div>
             ) : (
               <button onClick={() => setShowLoginDialog(true)} className="btn btn-secondary">
-                <User size={16} />
+                <span>👤</span>
                 <span>Admin Login</span>
               </button>
             )}
@@ -244,7 +222,7 @@ function App() {
         <div className="filters-section">
           <div className="search-row">
             <div className="search-input-wrapper">
-              <Search size={20} className="search-icon" />
+              <span className="search-icon">🔍</span>
               <input
                 type="text"
                 placeholder="Pesquisar por título, descrição ou tag..."
@@ -289,13 +267,13 @@ function App() {
           {sortedProjects.map((project) => (
             <div key={project.id} className="project-card">
               {project.pinned && (
-                <div className="pinned-badge">Fixado</div>
+                <div className="pinned-badge">📌 Fixado</div>
               )}
 
               <div className="project-header">
                 <div className="project-info">
                   <div className="project-icon">
-                    {ICON_MAP[project.icon]}
+                    <span className="icon-emoji">{project.icon}</span>
                   </div>
                   <div>
                     <h3>{project.title}</h3>
@@ -311,14 +289,16 @@ function App() {
                     <button
                       onClick={() => handleEditProject(project)}
                       className="action-btn edit-btn"
+                      title="Editar"
                     >
-                      <Edit size={16} />
+                      ✏️
                     </button>
                     <button
                       onClick={() => handleDeleteProject(project.id)}
                       className="action-btn delete-btn"
+                      title="Eliminar"
                     >
-                      <Trash2 size={16} />
+                      🗑️
                     </button>
                   </div>
                 )}
@@ -363,7 +343,7 @@ function App() {
                 onClick={() => setShowLoginDialog(false)}
                 className="close-btn"
               >
-                <X size={20} />
+                ❌
               </button>
             </div>
             
@@ -408,7 +388,7 @@ function App() {
                 onClick={() => setShowProjectDialog(false)}
                 className="close-btn"
               >
-                <X size={20} />
+                ❌
               </button>
             </div>
             
